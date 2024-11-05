@@ -40,12 +40,12 @@ const Register = () => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password }) // Usunięcie aktywacji
         })
         .then(response => response.json())
         .then(data => {
             if (data.message === "success") {
-                alert("Rejestracja zakończona sukcesem! Sprawdź swoją skrzynkę pocztową, aby aktywować konto.");
+                alert("Rejestracja zakończona sukcesem!");
                 navigate("/login"); // Przekierowanie do logowania
             } else {
                 alert("Wystąpił błąd: " + data.message);

@@ -2,131 +2,134 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 
-
 const Login = (props) => {
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
-    const [emailError, setEmailError] = useState("")
-    const [passwordError, setPasswordError] = useState("")
-    
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [emailError, setEmailError] = useState("");
+    const [passwordError, setPasswordError] = useState("");
+
     const navigate = useNavigate();
-        
+
     const onButtonClick = () => {
+        setEmailError("");
+        setPasswordError("");
 
-        // Set initial error values to empty
-        setEmailError("")
-        setPasswordError("")
-
-        // Check if the user has entered both fields correctly
-        if ("" === email) {
-            setEmailError("Please enter your email")
-            return
+        if (email === "") {
+            setEmailError("Please enter your email");
+            return;
         }
 
         if (!/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
-            setEmailError("Please enter a valid email")
-            return
+            setEmailError("Please enter a valid email");
+            return;
         }
 
-        if ("" === password) {
-            setPasswordError("Please enter a password")
-            return
+        if (password === "") {
+            setPasswordError("Please enter a password");
+            return;
         }
 
-        if (password.length < 7) {
-            setPasswordError("The password must be 8 characters or longer")
-            return
+        if (password.length < 8) {
+            setPasswordError("The password must be 8 characters or longer");
+            return;
         }
 
-        // Check if email has an account associated with it
         checkAccountExists(accountExists => {
-            // If yes, log in
-            if (accountExists)
-                logIn()
-            else
-            // Else, ask user if they want to create a new account and if yes, then log in
-                if (window.confirm("An account does not exist with this email address: " + email + ". Do you want to create a new account?")) {
-                    logIn()
+            if (accountExists) {
+                logIn();
+            } else {
+                if (window.confirm("An account does not exist with this email address. Do you want to create a new account?")) {
+                    navigate("/register");
                 }
-        })
-  
+            }
+        });
+    };
 
-    }
-
-    // Call the server API to check if the given email ID already exists
     const checkAccountExists = (callback) => {
         fetch("http://localhost:3080/check-account", {
             method: "POST",
             headers: {
                 'Content-Type': 'application/json'
-              },
-            body: JSON.stringify({email})
+            },
+            body: JSON.stringify({ email })
         })
-        .then(r => r.json())
-        .then(r => {
-            callback(r?.userExists)
+        .then(response => response.json())
+        .then(data => {
+            callback(data?.userExists);
         })
-    }
+        .catch(error => {
+            console.error('Error checking account existence:', error);
+            callback(false);
+        });
+    };
 
-    // Log in a user using email and password
     const logIn = () => {
         fetch("http://localhost:3080/auth", {
             method: "POST",
             headers: {
                 'Content-Type': 'application/json'
-              },
-            body: JSON.stringify({email, password})
+            },
+            body: JSON.stringify({ email, password })
         })
-        .then(r => r.json())
-        .then(r => {
-            if ('success' === r.message) {
-                localStorage.setItem("user", JSON.stringify({email, token: r.token}))
-                props.setLoggedIn(true)
-                props.setEmail(email)
-                navigate("/")
+        .then(response => response.json())
+        .then(data => {
+            if (data.message === 'success') {
+                localStorage.setItem("user", JSON.stringify({ email, token: data.token }));
+                props.setLoggedIn(true);
+                props.setEmail(email);
+                navigate("/");
             } else {
-                window.alert("Wrong email or password")
+                window.alert("Wrong email or password");
             }
         })
-    }
+        .catch(error => {
+            console.error('Error logging in:', error);
+        });
+    };
 
-    return <div className={"mainContainer"}>
-        <div className={"titleContainer"}>
-            <div>Login</div>
+    return (
+        <div className="mainContainer">
+            <div className="titleContainer">
+                <div>Login</div>
+            </div>
+            <br />
+            <div className="inputContainer">
+                <input
+                    value={email}
+                    placeholder="Enter your email here"
+                    onChange={ev => setEmail(ev.target.value)}
+                    className="inputBox"
+                />
+                <label className="errorLabel">{emailError}</label>
+            </div>
+            <br />
+            <div className="inputContainer">
+                <input
+                    type="password"
+                    value={password}
+                    placeholder="Enter your password here"
+                    onChange={ev => setPassword(ev.target.value)}
+                    className="inputBox"
+                />
+                <label className="errorLabel">{passwordError}</label>
+            </div>
+            <br />
+            <div className="inputContainer">
+                <input
+                    className="inputButton"
+                    type="button"
+                    onClick={onButtonClick}
+                    value="Log in"
+                />
+            </div>
+            <br />
+            <div className="inputContainer">
+                <p>
+                    Don't have an account? <Link to="/register">Register here</Link>
+                </p>
+            </div>
         </div>
-        <br />
-        <div className={"inputContainer"}>
-            <input
-                value={email}
-                placeholder="Enter your email here"
-                onChange={ev => setEmail(ev.target.value)}
-                className={"inputBox"} />
-            <label className="errorLabel">{emailError}</label>
-        </div>
-        <br />
-        <div className={"inputContainer"}>
-            <input
-                value={password}
-                placeholder="Enter your password here"
-                onChange={ev => setPassword(ev.target.value)}
-                className={"inputBox"} />
-            <label className="errorLabel">{passwordError}</label>
-        </div>
-        <br />
-        <div className={"inputContainer"}>
-            <input
-                className={"inputButton"}
-                type="button"
-                onClick={onButtonClick}
-                value={"Log in"} />
-         </div>
-         <br />
-         <div className={"inputContainer"}>
-                         <p>
-                             Don't have an account? <Link to="/register">Register here</Link> {/* Link do rejestracji */}
-                         </p>
-                     </div>
-    </div>
-}
+    );
+};
 
-export default Login
+export default Login;
