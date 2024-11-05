@@ -2,15 +2,17 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 
+import "./Login.css";
+import './css/fontello.css'
 
 const Login = (props) => {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [emailError, setEmailError] = useState("")
     const [passwordError, setPasswordError] = useState("")
-    
+
     const navigate = useNavigate();
-        
+
     const onButtonClick = () => {
 
         // Set initial error values to empty
@@ -23,7 +25,7 @@ const Login = (props) => {
             return
         }
 
-        if (!/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
+        if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
             setEmailError("Please enter a valid email")
             return
         }
@@ -49,7 +51,7 @@ const Login = (props) => {
                     logIn()
                 }
         })
-  
+
 
     }
 
@@ -90,42 +92,79 @@ const Login = (props) => {
         })
     }
 
-    return <div className={"mainContainer"}>
-        <div className={"titleContainer"}>
-            <div>Login</div>
+    let rememberMe;
+
+    function setRememberMe(b) {
+
+    }
+
+    return <div className={"mainContainerLogin"}>
+        <div className={"OptionContainerLogin"}>
+            <div className={"titleContainerLogin"}>
+                <div>Logowanie</div>
+            </div>
+            <div className={"welcomeContainerLogin"}>
+                <div>Cześć, <br/>Witamy!</div>
+            </div>
+            <br/>
+            <div className={"inputContainerLogin"}>
+                <input
+                    value={email}
+                    placeholder="Wprowadz swój E-mail."
+                    onChange={ev => setEmail(ev.target.value)}
+                    className={"inputBoxLogin"}/>
+                <label className="errorLabelLogin">{emailError}</label>
+            </div>
+            <br/>
+            <div className={"inputContainerLogin"}>
+                <input
+                    type="password"
+                    value={password}
+                    placeholder="Wprowadz swoje hasło."
+                    onChange={ev => setPassword(ev.target.value)}
+                    className={"inputBoxLogin"}/>
+                <label className="errorLabelLogin">{passwordError}</label>
+                <br/>
+                <div className={"inputContainerLogin"}>
+                    <label>
+                        <input
+                            type="checkbox"
+                            checked={rememberMe}
+                            onChange={() => setRememberMe(!rememberMe)} // Zmienia stan checkboxa
+                        />
+                        Zapamiętaj mnie
+                    </label>
+
+                </div>
+            </div>
+            <br/>
+            <div className={"inputContainerLogin"}>
+                <input
+                    className={"inputButtonLogin1"}
+                    type="buttonlogin"
+                    onClick={onButtonClick}
+                    value={"Zaloguj"}/>
+            </div>
+            <br/>
+            <div className={"inputContainerLogin"}>
+                <p>
+                    Nie posiadasz jeszcze konta? <Link to="/register">Zarejestruj się!</Link> {/* Link do rejestracji */}
+                </p>
+            </div>
+            <div className={"inputContainerLogin"}>
+                <div className="forgotPasswordContainer">
+                    <p className="forgotPasswordLink">
+                        <a href="#">Zapomniałeś hasła?</a>
+                    </p>
+                </div>
+            </div>
+            <div className="icon-container">
+                <i className="icon-facebook icon"></i>
+                <i className="icon-instagram icon"></i>
+                <i className="icon-twitter icon"></i>
+            </div>
+            <footer><p>obserwuj</p></footer>
         </div>
-        <br />
-        <div className={"inputContainer"}>
-            <input
-                value={email}
-                placeholder="Enter your email here"
-                onChange={ev => setEmail(ev.target.value)}
-                className={"inputBox"} />
-            <label className="errorLabel">{emailError}</label>
-        </div>
-        <br />
-        <div className={"inputContainer"}>
-            <input
-                value={password}
-                placeholder="Enter your password here"
-                onChange={ev => setPassword(ev.target.value)}
-                className={"inputBox"} />
-            <label className="errorLabel">{passwordError}</label>
-        </div>
-        <br />
-        <div className={"inputContainer"}>
-            <input
-                className={"inputButton"}
-                type="button"
-                onClick={onButtonClick}
-                value={"Log in"} />
-         </div>
-         <br />
-         <div className={"inputContainer"}>
-                         <p>
-                             Don't have an account? <Link to="/register">Register here</Link> {/* Link do rejestracji */}
-                         </p>
-                     </div>
     </div>
 }
 
