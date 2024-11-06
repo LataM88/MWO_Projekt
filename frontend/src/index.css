@@ -23,16 +23,19 @@ code {
   background: #fafafa;
   border-radius: 5px;
   padding: 0.75rem;
-  font-family: Menlo, Monaco, Lucida Console, Courier New, monospace;
 }
 
 input[type="button"] {
-    border: none;
-    background: cornflowerblue;
-    color: white;
-    padding: 12px 24px;
-    margin: 8px;
-    font-size: 24px;
-    border-radius: 8px;
-    cursor: pointer;
+    border: none; /* Bez obramowania */
+        background-color: rgba(21, 72, 75, 1); /* Tło przycisku */
+        color: white; /* Kolor tekstu przycisku */
+        padding: 10px; /* Padding wewnętrzny przycisku */
+        font-size: 18px; /* Rozmiar czcionki przycisku */
+        border-radius: 25px; /* Zaokrąglenie krawędzi przycisku */
+        cursor: pointer; /* Zmiana kursora na wskaźnik */
+        text-align: center; /* Wyśrodkowanie tekstu */
+        width: 100%; /* Szerokość przycisku na 100% */
+        margin-top: 10px; /* Górny margines */
+        transition: background-color 0.3s; /* Płynna zmiana koloru tła */
+        font-family: 'Langar';
 }

@@ -95,7 +95,7 @@ input[type="buttonregister"]:hover {
 
 
 .inputContainerRegister p a {
-    color: #007bff; /* Kolor linku */
+    color: rgba(21, 72, 75, 1); /* Kolor linku */
     text-decoration: none; /* Bez podkreślenia */
 }
 

@@ -6,7 +6,7 @@
     justify-content: center; /* Wyśrodkowanie w pionie */
     min-height: 100vh; /* Minimalna wysokość na 100% wysokości okna */
     background-color: rgba(21, 72, 75, 1); /* Tło w ciemnym odcieniu zieleni */
-    font-family: "Julee", cursive;
+    font-family: 'Langar';
 }
 
 /* Główny kontener opcji logowania */
@@ -101,7 +101,7 @@ input[type="buttonlogin"]:hover {
 
 /* Styl linku rejestracji */
 .inputContainerLogin p a {
-    color: #007bff; /* Kolor linku */
+    color: rgba(21, 72, 75, 1); /* Kolor linku */
     text-decoration: none; /* Bez podkreślenia */
 }
 
