@@ -1,5 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
+
+import "./Register.css";
+import './css/fontello.css'
 
 const Register = () => {
     const [email, setEmail] = useState("");
@@ -54,39 +57,55 @@ const Register = () => {
     };
 
     return (
-        <div className="mainContainer">
-            <div className="titleContainer">
-                <div>Rejestracja</div>
-            </div>
-            <br />
-            <div className="inputContainer">
-                <input
-                    value={email}
-                    placeholder="Wprowadź swój email"
-                    onChange={ev => setEmail(ev.target.value)}
-                    className="inputBox"
-                />
-                <label className="errorLabel">{emailError}</label>
-            </div>
-            <br />
-            <div className="inputContainer">
-                <input
-                    type="password"
-                    value={password}
-                    placeholder="Wprowadź swoje hasło"
-                    onChange={ev => setPassword(ev.target.value)}
-                    className="inputBox"
-                />
-                <label className="errorLabel">{passwordError}</label>
-            </div>
-            <br />
-            <div className="inputContainer">
-                <input
-                    className="inputButton"
-                    type="button"
-                    onClick={onButtonClick}
-                    value="Zarejestruj się"
-                />
+        <div className="mainContainerRegister">
+            <div className={"OptionContainerRegister"}>
+                <div className="titleContainerRegister">
+                    <div>Rejestracja</div>
+                </div>
+                <div className={"welcomeContainerRegister"}>
+                    <div>Cześć, <br/>Witamy po raz pierwszy!</div>
+                </div>
+                <br/>
+                <div className="inputContainerRegister">
+                    <input
+                        value={email}
+                        placeholder="Wprowadź swój email"
+                        onChange={ev => setEmail(ev.target.value)}
+                        className="inputBoxRegister"
+                    />
+                    <label className="errorLabelRejestracja">{emailError}</label>
+                </div>
+                <br/>
+                <div className="inputContainerRegister">
+                    <input
+                        type="password"
+                        value={password}
+                        placeholder="Wprowadź swoje hasło"
+                        onChange={ev => setPassword(ev.target.value)}
+                        className="inputBoxRegister"
+                    />
+                    <label className="errorLabelRejestracja">{passwordError}</label>
+                </div>
+                <br/>
+                <div className="inputContainerRegister">
+                    <input
+                        className="inputButtonRegister"
+                        type="buttonregister"
+                        onClick={onButtonClick}
+                        value="Zarejestruj się"
+                    />
+                </div>
+                <div className={"inputContainerRegister"}>
+                    <p>
+                        Posiadasz już konto? <Link to="/login">Zaloguj się!</Link> {/* Link do rejestracji */}
+                    </p>
+                </div>
+                <div className="icon-container">
+                    <i className="icon-facebook icon"></i>
+                    <i className="icon-instagram icon"></i>
+                    <i className="icon-twitter icon"></i>
+                </div>
+                <footer><p>obserwuj</p></footer>
             </div>
         </div>
     );
