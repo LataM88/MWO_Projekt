@@ -150,7 +150,7 @@ const Login = (props) => {
                 <div className="inputContainerLogin">
                     <div className="forgotPasswordContainer">
                         <p className="forgotPasswordLink">
-                            <a href="#">Zapomniałeś hasła?</a>
+                            <Link to="/zapomnialesHasla">Zapomniałeś hasła?</Link>
                         </p>
                     </div>
                 </div>

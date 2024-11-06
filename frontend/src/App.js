@@ -3,6 +3,7 @@ import Home from './home';
 import Login from './login';
 import Register from './register';  // Import komponentu rejestracji
 import './App.css';
+import ZapomnialesHasla from './zapomnialesHasla';
 import { useEffect, useState } from 'react';
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
                     <Route path="/" element={<Home email={email} loggedIn={loggedIn} setLoggedIn={setLoggedIn}/>} />
                     <Route path="/login" element={<Login setLoggedIn={setLoggedIn} setEmail={setEmail} />} />
                     <Route path="/register" element={<Register />} /> {/* Nowa trasa */}
+                    <Route path="/zapomnialesHasla" element={<ZapomnialesHasla />} />
                 </Routes>
             </BrowserRouter>
         </div>
