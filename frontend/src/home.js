@@ -41,7 +41,7 @@ const Home = (props) => {
 
                     <input
                         className={"inputButtonHome"}
-                        type="buttonn"
+                        type="button"
                         onClick={onButtonClick}
                         value={loggedIn ? "Wyloguj" : "Zaloguj"} />
 
