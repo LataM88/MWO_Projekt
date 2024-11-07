@@ -2,30 +2,21 @@ import express from 'express';
 import nodemailer from 'nodemailer';
 import bcrypt from 'bcrypt';
 import cors from 'cors';
+import jwt from 'jsonwebtoken';
 import { createClient } from '@supabase/supabase-js';
 
 // Konfiguracja Supabase
 const supabaseUrl = 'https://qgjrvrjgmewqffywfxhh.supabase.co';
-const supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY'; // Zastąp odpowiednim kluczem
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFnanJ2cmpnbWV3cWZmeXdmeGhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA4MTExMDMsImV4cCI6MjA0NjM4NzEwM30.hrnOev0tRUM9cUNugQu5BARLBrm3VbQS1VsCy4ZkMzM';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Konfiguracja Nodemailer
-const transporter = nodemailer.createTransport({
-    service: 'Gmail', // Możesz wybrać innego dostawcę
-    auth: {
-        user: 'your_email@gmail.com', // Twój adres e-mail
-        pass: 'your_email_password'   // Twoje hasło do konta Gmail (lub aplikacyjne hasło, jeśli masz 2FA)
-    }
-});
-
-// Inicjalizacja Express
 const app = express();
+const jwtSecretKey = 'dsfdsfsdfdsvcsvdfgefg'; // JWT secret key
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-<<<<<<< HEAD
-// Endpoint do wysyłania kodu resetu
-=======
 // Main API route
 app.get('/', (_req, res) => {
     res.send('Auth API.\nPlease use POST /auth & POST /register for authentication');
@@ -121,29 +112,19 @@ const transporter = nodemailer.createTransport({
 
 // Endpoint to send password reset link
 // Endpoint to send password reset link
->>>>>>> c7ccb1b767c529d585140404884bafe37045b464
 app.post('/forgot-password', async (req, res) => {
     const { email } = req.body;  // Pobieramy e-mail użytkownika z zapytania
-
-    if (!email) {
-        return res.status(400).json({ message: 'E-mail jest wymagany.' });
-    }
 
     // Generowanie 6-cyfrowego kodu resetu
     const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-    try {
-        // Szukamy użytkownika w bazie danych
-        const { data, error } = await supabase
-            .from('users')
-            .select('email, resetCode')
-            .eq('email', email)
-            .single(); // Pobieramy tylko jeden rekord (jeśli istnieje)
+    // Szukamy użytkownika w bazie danych
+    const { data, error } = await supabase
+        .from('users')
+        .select('email, resetCode')
+        .eq('email', email)
+        .single(); // Pobieramy tylko jeden rekord (jeśli istnieje)
 
-<<<<<<< HEAD
-        if (error || !data) {
-            return res.status(400).json({ message: 'Użytkownik nie istnieje.' });
-=======
     if (error || !data) {
         return res.status(400).json({ message: 'Użytkownik nie istnieje.' });
     }
@@ -170,43 +151,11 @@ app.post('/forgot-password', async (req, res) => {
         if (err) {
             console.error("Error sending email:", err);  // Logowanie błędu w konsoli
             return res.status(500).json({ message: 'Błąd wysyłania e-maila.' });
->>>>>>> c7ccb1b767c529d585140404884bafe37045b464
         }
-
-        // Aktualizowanie kodu resetu w bazie danych
-        const { error: updateError } = await supabase
-            .from('users')
-            .update({ resetCode }) // Zapisujemy nowy kod resetu w bazie
-            .eq('email', email);
-
-        if (updateError) {
-            return res.status(500).json({ message: 'Błąd podczas aktualizacji kodu resetu.' });
-        }
-
-        // Wysyłanie wiadomości e-mail z kodem resetu
-        const mailOptions = {
-            from: 'your_email@gmail.com',
-            to: email,
-            subject: 'Kod resetu hasła',
-            text: `Twój kod resetu hasła to: ${resetCode}`
-        };
-
-        transporter.sendMail(mailOptions, (err) => {
-            if (err) {
-                return res.status(500).json({ message: 'Błąd wysyłania e-maila.' });
-            }
-            res.status(200).json({ message: 'Kod resetu został wysłany na Twój e-mail.' });
-        });
-
-    } catch (err) {
-        console.error('Błąd podczas resetu hasła:', err);
-        res.status(500).json({ message: 'Wewnętrzny błąd serwera.' });
-    }
+        res.status(200).json({ message: 'Kod resetu został wysłany na Twój e-mail.' });
+    });
 });
 
-<<<<<<< HEAD
-// Start serwera
-=======
 
 // Endpoint to reset the password
 app.post('/reset-password', async (req, res) => {
@@ -246,7 +195,6 @@ app.post('/reset-password', async (req, res) => {
 
 
 // Start server
->>>>>>> c7ccb1b767c529d585140404884bafe37045b464
 app.listen(3080, () => {
     console.log('Server is running on port 3080');
 });
