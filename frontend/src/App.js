@@ -4,7 +4,7 @@ import Login from './login';
 import Register from './register';  // Import komponentu rejestracji
 import './App.css';
 import ZapomnialesHasla from './zapomnialesHasla';
-import ForgotPassword from './ForgotPassword'
+import ForgotPassword from './zapomnialesHasla';
 import { useEffect, useState } from 'react';
 
 function App() {
@@ -36,7 +36,7 @@ function App() {
         <div className="App">
             <BrowserRouter>
                 <Routes>
-                    <Route path="/zapomnialesHasla" element={<ForgotPassword />} />
+
                     <Route path="/" element={<Home email={email} loggedIn={loggedIn} setLoggedIn={setLoggedIn}/>} />
                     <Route path="/login" element={<Login setLoggedIn={setLoggedIn} setEmail={setEmail} />} />
                     <Route path="/register" element={<Register />} /> {/* Nowa trasa */}
