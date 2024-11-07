@@ -114,37 +114,37 @@ const transporter = nodemailer.createTransport({
 app.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
 
-    // Generowanie 6-cyfrowego kodu resetu
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log('Otrzymano email:', email); // Sprawdź, co przychodzi z frontend
 
-    // Szukamy użytkownika w bazie danych
+    // Sprawdzamy, czy użytkownik istnieje
     const { data, error } = await supabase
         .from('users')
         .select('email, resetCode')
         .eq('email', email)
-        .single(); // Pobieramy tylko jeden rekord (jeśli istnieje)
+        .single();
 
     if (error || !data) {
-        // Jeśli nie ma takiego użytkownika lub wystąpił błąd, zwróć błąd
         return res.status(400).json({ message: 'Użytkownik nie istnieje.' });
     }
 
-    // Aktualizowanie resetCode w bazie danych dla tego użytkownika
+    // Generujemy i zapisujemy kod resetu
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+
     const { error: updateError } = await supabase
         .from('users')
-        .update({ resetCode }) // Ustawiamy nowy kod resetu
+        .update({ resetCode })
         .eq('email', email);
 
     if (updateError) {
         return res.status(500).json({ message: 'Błąd podczas aktualizacji kodu resetu.' });
     }
 
-    // Wysyłanie kodu resetu na e-mail użytkownika
+    // Wysyłamy email z kodem resetu
     const mailOptions = {
         from: 'your_email@gmail.com',
         to: email,
         subject: 'Kod resetu hasła',
-        text: `Twój kod resetu hasła to: ${resetCode}`
+        text: Twój kod resetu hasła to: ${resetCode}
     };
 
     transporter.sendMail(mailOptions, (err) => {
