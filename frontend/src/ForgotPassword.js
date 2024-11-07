@@ -3,13 +3,14 @@ import { useNavigate } from "react-router-dom";
 import "./zapomnialesHasla.css";
 
 const ForgotPassword = () => {
-    const [email, setEmail] = useState("");
-    const [code, setCode] = useState("");
-    const [newPassword, setNewPassword] = useState("");
-    const [message, setMessage] = useState("");
-    const [step, setStep] = useState(1);
-    const navigate = useNavigate();
+    const [email, setEmail] = useState(""); // Stan dla emaila
+    const [code, setCode] = useState(""); // Stan dla kodu resetu
+    const [newPassword, setNewPassword] = useState(""); // Stan dla nowego hasła
+    const [message, setMessage] = useState(""); // Wiadomość do użytkownika
+    const [step, setStep] = useState(1); // Krok formularza (1 - wprowadzenie emaila, 2 - wprowadzenie kodu i hasła)
+    const navigate = useNavigate(); // Funkcja nawigacyjna
 
+    // Funkcja do wysyłania kodu resetu
     const sendResetEmail = () => {
         fetch("http://localhost:3080/forgot-password", {
             method: "POST",
@@ -19,11 +20,12 @@ const ForgotPassword = () => {
         .then(response => response.json())
         .then(data => {
             setMessage("Kod resetu został wysłany.");
-            setStep(2);
+            setStep(2); // Przechodzimy do kolejnego kroku formularza
         })
-        .catch(() => setMessage("Błąd wysyłania kodu resetu."));
+        .catch(() => setMessage("Błąd wysyłania kodu resetu.")); // Obsługa błędu
     };
 
+    // Funkcja do resetowania hasła
     const resetPassword = () => {
         fetch("http://localhost:3080/reset-password", {
             method: "POST",
@@ -34,12 +36,12 @@ const ForgotPassword = () => {
         .then(data => {
             if (data.message === 'Password updated successfully') {
                 setMessage("Hasło zostało zmienione.");
-                navigate("/login");
+                navigate("/login"); // Przekierowanie do strony logowania po pomyślnym zresetowaniu hasła
             } else {
                 setMessage("Błąd: nieprawidłowy kod lub hasło.");
             }
         })
-        .catch(() => setMessage("Wewnętrzny błąd serwera."));
+        .catch(() => setMessage("Wewnętrzny błąd serwera.")); // Obsługa błędu
     };
 
     return (
@@ -52,8 +54,8 @@ const ForgotPassword = () => {
                         <input
                             type="email"
                             placeholder="Wprowadź swój e-mail"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            value={email} // Powiązanie wartości z stanem email
+                            onChange={(e) => setEmail(e.target.value)} // Obsługuje zmiany w polu email
                             className="emailInput"
                         />
                         <button onClick={sendResetEmail} className="submitButton">
@@ -66,15 +68,15 @@ const ForgotPassword = () => {
                         <input
                             type="text"
                             placeholder="Kod resetu"
-                            value={code}
-                            onChange={(e) => setCode(e.target.value)}
+                            value={code} // Powiązanie wartości z stanem kodu
+                            onChange={(e) => setCode(e.target.value)} // Obsługuje zmiany w polu kodu
                             className="emailInput"
                         />
                         <input
                             type="password"
                             placeholder="Nowe hasło"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
+                            value={newPassword} // Powiązanie wartości z stanem nowego hasła
+                            onChange={(e) => setNewPassword(e.target.value)} // Obsługuje zmiany w polu hasła
                             className="emailInput"
                         />
                         <button onClick={resetPassword} className="submitButton">

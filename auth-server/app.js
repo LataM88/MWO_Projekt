@@ -1,4 +1,5 @@
 import express from 'express';
+import nodemailer from 'nodemailer';
 import bcrypt from 'bcrypt';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
@@ -100,6 +101,96 @@ app.post('/check-account', async (req, res) => {
         res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
     }
 });
+
+const transporter = nodemailer.createTransport({
+    service: 'Gmail', // or another email provider
+    auth: {
+        user: 'your_email@gmail.com',
+        pass: 'your_email_password'
+    }
+});
+
+// Endpoint to send password reset link
+app.post('/forgot-password', async (req, res) => {
+    const { email } = req.body;
+
+    // Generowanie 6-cyfrowego kodu resetu
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Szukamy użytkownika w bazie danych
+    const { data, error } = await supabase
+        .from('users')
+        .select('email, resetCode')
+        .eq('email', email)
+        .single(); // Pobieramy tylko jeden rekord (jeśli istnieje)
+
+    if (error || !data) {
+        // Jeśli nie ma takiego użytkownika lub wystąpił błąd, zwróć błąd
+        return res.status(400).json({ message: 'Użytkownik nie istnieje.' });
+    }
+
+    // Aktualizowanie resetCode w bazie danych dla tego użytkownika
+    const { error: updateError } = await supabase
+        .from('users')
+        .update({ resetCode }) // Ustawiamy nowy kod resetu
+        .eq('email', email);
+
+    if (updateError) {
+        return res.status(500).json({ message: 'Błąd podczas aktualizacji kodu resetu.' });
+    }
+
+    // Wysyłanie kodu resetu na e-mail użytkownika
+    const mailOptions = {
+        from: 'your_email@gmail.com',
+        to: email,
+        subject: 'Kod resetu hasła',
+        text: `Twój kod resetu hasła to: ${resetCode}`
+    };
+
+    transporter.sendMail(mailOptions, (err) => {
+        if (err) {
+            return res.status(500).json({ message: 'Błąd wysyłania e-maila.' });
+        }
+        res.status(200).json({ message: 'Kod resetu został wysłany na Twój e-mail.' });
+    });
+});
+
+// Endpoint to reset the password
+app.post('/reset-password', async (req, res) => {
+    const { email, resetCode, newPassword } = req.body;
+
+    // Weryfikowanie, czy kod resetu pasuje do zapisanego kodu w bazie
+    const { data, error } = await supabase
+        .from('users')
+        .select('resetCode, password')
+        .eq('email', email)
+        .single(); // Pobieramy tylko jeden rekord
+
+    if (error || !data) {
+        return res.status(400).json({ message: 'Użytkownik nie istnieje.' });
+    }
+
+    // Sprawdzanie, czy kod resetu się zgadza
+    if (data.resetCode !== resetCode) {
+        return res.status(400).json({ message: 'Nieprawidłowy kod resetu.' });
+    }
+
+    // Szyfrowanie nowego hasła
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Aktualizowanie hasła i usuwanie resetCode z bazy
+    const { error: updateError } = await supabase
+        .from('users')
+        .update({ password: hashedPassword, resetCode: null }) // Resetujemy kod po zmianie hasła
+        .eq('email', email);
+
+    if (updateError) {
+        return res.status(500).json({ message: 'Błąd aktualizacji hasła.' });
+    }
+
+    res.status(200).json({ message: 'Hasło zostało zmienione pomyślnie.' });
+});
+
 
 // Start server
 app.listen(3080, () => {
