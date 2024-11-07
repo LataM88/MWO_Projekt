@@ -103,16 +103,17 @@ app.post('/check-account', async (req, res) => {
 });
 
 const transporter = nodemailer.createTransport({
-    service: 'Gmail', // or another email provider
+    service: 'Gmail',
     auth: {
-        user: 'your_email@gmail.com',
-        pass: 'your_email_password'
+        user: 'projekt.mwo24@gmail.com',
+        pass: 'dokr ytzb odhi ytgs'
     }
 });
 
 // Endpoint to send password reset link
+// Endpoint to send password reset link
 app.post('/forgot-password', async (req, res) => {
-    const { email } = req.body;
+    const { email } = req.body;  // Pobieramy e-mail użytkownika z zapytania
 
     // Generowanie 6-cyfrowego kodu resetu
     const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -125,7 +126,6 @@ app.post('/forgot-password', async (req, res) => {
         .single(); // Pobieramy tylko jeden rekord (jeśli istnieje)
 
     if (error || !data) {
-        // Jeśli nie ma takiego użytkownika lub wystąpił błąd, zwróć błąd
         return res.status(400).json({ message: 'Użytkownik nie istnieje.' });
     }
 
@@ -141,19 +141,21 @@ app.post('/forgot-password', async (req, res) => {
 
     // Wysyłanie kodu resetu na e-mail użytkownika
     const mailOptions = {
-        from: 'your_email@gmail.com',
-        to: email,
+        from: 'projekt.mwo24@gmail.com',  // Adres e-mail nadawcy
+        to: email,  // Używamy adresu e-mail użytkownika jako odbiorcy
         subject: 'Kod resetu hasła',
-        text: `Twój kod resetu hasła to: ${resetCode}`
+        text: `Twój kod resetu hasła to: ${resetCode}`  // Treść wiadomości
     };
 
     transporter.sendMail(mailOptions, (err) => {
         if (err) {
+            console.error("Error sending email:", err);  // Logowanie błędu w konsoli
             return res.status(500).json({ message: 'Błąd wysyłania e-maila.' });
         }
         res.status(200).json({ message: 'Kod resetu został wysłany na Twój e-mail.' });
     });
 });
+
 
 // Endpoint to reset the password
 app.post('/reset-password', async (req, res) => {
