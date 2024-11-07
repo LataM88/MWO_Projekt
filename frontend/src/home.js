@@ -1,5 +1,6 @@
 import React from "react"
 import { useNavigate } from "react-router-dom";
+import myImage from './img/homechat.png';
 
 import "./home.css";
 import './css/fontello.css'
@@ -7,7 +8,6 @@ import './css/fontello.css'
 const Home = (props) => {
     const { loggedIn, email } = props
     const navigate = useNavigate();
-    //props.setLoggedIn(true)
     const onButtonClick = () => {
         if (loggedIn) {
             localStorage.removeItem("user")
@@ -23,24 +23,18 @@ const Home = (props) => {
 
 
 
-    /*!!!!!!!!!!!!tmp_nav!!!!!!!!!!!!!*/
-    const moveToChat = () => {
-
-        navigate("/login")
-    }
-    /*!!!!!!!!!!!!tmp_nav!!!!!!!!!!!!!*/
 
 
     return <div className="mainContainer" id="mainContainerHome">
         <div className={"mainBoxHome"}>
             <div className={"graphBox"}>
-
+                <img src={myImage} alt="" />
             </div>
 
             <div className={"side"}>
 
                 <div className={"titleContainer"} id="titleHome">
-                    <div>Welcome!</div>
+                    <div>Witamy!</div>
                 </div>
 
                 <div className={"buttonContainer"}>
@@ -49,7 +43,7 @@ const Home = (props) => {
                         className={"inputButtonHome"}
                         type="buttonn"
                         onClick={onButtonClick}
-                        value={loggedIn ? "Log out" : "Log in"} />
+                        value={loggedIn ? "Wyloguj" : "Zaloguj"} />
 
 
                     {!loggedIn ? (
@@ -58,11 +52,10 @@ const Home = (props) => {
                             className={"inputButtonHome"}
                             type="buttonn"
                             onClick={onButtonClickReg}
-                            value={"Register"}
+                            value={"Zarejestruj się"}
                         />) : (
                         <div>
-                            <p className={"moveToChat"} onClick={moveToChat}>You are currently logged in!</p>
-                            <p className={"moveToChat"} onClick={moveToChat}>Move to chat!</p>
+                            <p>Jesteś zalogowany jako {email}!</p>
                         </div>)
                     }
 
@@ -72,7 +65,7 @@ const Home = (props) => {
                         <i className="icon-twitter icon"></i>
                     </div>
 
-                    <footer><p>obserwuj</p></footer>
+                    <p>obserwuj</p>
 
                 </div>
             </div>
