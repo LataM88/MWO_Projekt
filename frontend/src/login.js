@@ -17,22 +17,22 @@ const Login = (props) => {
         setPasswordError("");
 
         if (email === "") {
-            setEmailError("Please enter your email");
+            setEmailError("Prosze wprowadź email");
             return;
         }
 
         if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
-            setEmailError("Please enter a valid email");
+            setEmailError("Wprowadź poprawny eamil");
             return;
         }
 
         if (password === "") {
-            setPasswordError("Please enter a password");
+            setPasswordError("Wprowadź hasło");
             return;
         }
 
         if (password.length < 8) {
-            setPasswordError("The password must be 8 characters or longer");
+            setPasswordError("Hasło musi mieć 8 znaków lub więcej");
             return;
         }
 
