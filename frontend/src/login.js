@@ -52,7 +52,7 @@ const Login = (props) => {
             if (accountExists) {
                 logIn();
             } else {
-                if (window.confirm("An account does not exist with this email address. Do you want to create a new account?")) {
+                if (window.confirm("Konto z podanym adresem email nie istnieje. Chcesz założyć nowe konto?")) {
                     navigate("/register");
                 }
             }
