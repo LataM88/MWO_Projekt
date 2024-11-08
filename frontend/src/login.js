@@ -17,12 +17,20 @@ const Login = (props) => {
         setPasswordError("");
 
         if (email === "") {
+<<<<<<< HEAD
             setEmailError("Prosze wprowadź email");
+=======
+            setEmailError("Podaj swój email");
+>>>>>>> 0b621c72bdf95ead59905e93ea56f01f350787df
             return;
         }
 
         if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
+<<<<<<< HEAD
             setEmailError("Wprowadź poprawny eamil");
+=======
+            setEmailError("Podaj poprawny email");
+>>>>>>> 0b621c72bdf95ead59905e93ea56f01f350787df
             return;
         }
 
@@ -32,7 +40,11 @@ const Login = (props) => {
         }
 
         if (password.length < 8) {
+<<<<<<< HEAD
             setPasswordError("Hasło musi mieć 8 znaków lub więcej");
+=======
+            setPasswordError("Hasło musi mieć 8 znaków lub wiecej");
+>>>>>>> 0b621c72bdf95ead59905e93ea56f01f350787df
             return;
         }
 
