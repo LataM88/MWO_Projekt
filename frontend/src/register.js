@@ -90,7 +90,7 @@ const Register = () => {
                 <div className="inputContainerRegister">
                     <input
                         className="inputButtonRegister"
-                        type="buttonregister"
+                        type="button"
                         onClick={onButtonClick}
                         value="Zarejestruj się"
                     />
