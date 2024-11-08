@@ -81,7 +81,7 @@ const Login = (props) => {
                 props.setEmail(email);
                 navigate("/");
             } else {
-                window.alert("Wrong email or password");
+                window.alert("Błedny email lub hasło!");
             }
         })
         .catch(error => {
