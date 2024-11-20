@@ -102,6 +102,25 @@ app.post('/check-account', async (req, res) => {
     }
 });
 
+// Get all users from the database
+app.get('/api/users', async (_req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('users') // Assuming your table name is 'users'
+            .select('*'); // Select all columns (or adjust if needed)
+
+        if (error) {
+            console.error('Error fetching users:', error);
+            return res.status(500).json({ message: 'Błąd pobierania użytkowników' });
+        }
+
+        res.status(200).json(data); // Return users data in JSON format
+    } catch (err) {
+        console.error('Unhandled error:', err);
+        res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
+    }
+});
+
 const transporter = nodemailer.createTransport({
     service: 'Gmail',
     auth: {
