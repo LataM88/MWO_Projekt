@@ -69,11 +69,17 @@ app.post('/auth', async (req, res) => {
 
     const result = await bcrypt.compare(password, user.password);
     if (!result) {
-        return res.status(401).json({ message: 'Invalid password' });
+        return res.status(401).json({ message: 'Błędne hasło' });
     } else {
         const loginData = { email, signInTime: Date.now() };
         const token = jwt.sign(loginData, jwtSecretKey);
-        res.status(200).json({ message: 'success', token });
+
+
+        res.status(200).json({
+            message: 'success',
+            token,
+            userId: user.id // Zwracamy userId
+        });
     }
 });
 
@@ -192,8 +198,43 @@ app.post('/reset-password', async (req, res) => {
 
     res.status(200).json({ message: 'Hasło zostało zmienione pomyślnie.' });
 });
+//lista użytkowników
+app.get('/users', async (req, res) => {
+    const { data, error } = await supabase
+        .from('users')
+        .select('id, email, isActive');
 
+    if (error) {
+        console.error('Error fetching users:', error);
+        return res.status(500).json({ message: 'Błąd serwera' });
+    }
 
+    res.status(200).json(data);
+});
+//informacje o użytkowniku
+app.get('/user/:id', async (req, res) => {
+    const { id } = req.params; // Pobranie ID z parametru ścieżki
+    console.log(`Fetching user with ID: ${id}`);
+
+    try {
+        // Zapytanie do Supabase po użytkownika z określonym ID
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', id)
+            .single(); // Oczekujemy dokładnie jednego wyniku
+
+        if (error || !data) {
+            console.error('Error fetching user:', error || 'No user found');
+            return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+        }
+
+        res.status(200).json(data); // Zwrócenie danych użytkownika
+    } catch (err) {
+        console.error('Unexpected error:', err);
+        res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
+    }
+});
 // Start server
 app.listen(3080, () => {
     console.log('Server is running on port 3080');
