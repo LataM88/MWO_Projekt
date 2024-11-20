@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import "./profile.css"
 
 function Profile() {
     const { userId } = useParams(); // Pobieranie ID użytkownika z URL
@@ -24,11 +25,27 @@ function Profile() {
     if (!user) return <p>Nie znaleziono użytkownika.</p>;
 
     return (
-        <div>
-            <h1>Profil Użytkownika</h1>
-            <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Aktywny:</strong> {user.isActive ? 'Tak' : 'Nie'}</p>
-            {/* Dodaj więcej szczegółów, jeśli są dostępne */}
+        <div className="mainprofile">
+            <div className="profile-header">
+                <img
+                    src={user.photo || "https://placehold.jp/005f63/ffffff/120x120.png"}
+                    alt="Zdjęcie profilowe"
+                    className="profile-image"
+                />
+                <div className="profile-actions">
+                    <span className={`status ${user.isActive ? "" : "inactive"}`}>
+                        {user.isActive ? "Aktywny" : "Nie aktywny"}
+                    </span>
+                    <button className="inputButtonHome">Wyślij wiadomość</button>
+                </div>
+            </div>
+
+            <div className="profile-content">
+                <p className="email">{user.email}</p>
+                <div className="email-line"></div>
+                <p className="title">O mnie:</p>
+                <p>{user.opis || "Brak opisu."}</p>
+            </div>
         </div>
     );
 }

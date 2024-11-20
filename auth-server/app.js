@@ -202,7 +202,7 @@ app.post('/reset-password', async (req, res) => {
 app.get('/users', async (req, res) => {
     const { data, error } = await supabase
         .from('users')
-        .select('id, email, isActive');
+        .select('id, email, isActive, opis');
 
     if (error) {
         console.error('Error fetching users:', error);
