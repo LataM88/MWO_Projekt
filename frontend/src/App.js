@@ -3,6 +3,7 @@ import Home from './home';
 import Login from './login';
 import Navbar from './components/navbar';
 import Register from './register';  // Import komponentu rejestracji
+import Chat from './chat';
 import './App.css';
 import ForgotPassword from './zapomnialesHasla';
 import { useEffect, useState } from 'react';
@@ -41,6 +42,7 @@ function App() {
                     <Route path="/login" element={<Login setLoggedIn={setLoggedIn} setEmail={setEmail} />} />
                     <Route path="/register" element={<Register />} /> {/* Nowa trasa */}
                     <Route path="/zapomnialesHasla" element={<ForgotPassword />} />
+                    <Route path="/chat" element={<Chat />} /> {/* Nowa trasa do chatu */}
                 </Routes>
             </BrowserRouter>
         </div>
