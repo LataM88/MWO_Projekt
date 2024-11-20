@@ -92,8 +92,10 @@ const Login = (props) => {
                 props.setLoggedIn(true);
                 props.setEmail(email);
                 navigate("/");
+            } else if (data.message === 'Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.') {
+                window.alert('Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.');
             } else {
-                window.alert("Błedny email lub hasło!");
+                window.alert("Błędny email lub hasło!");
             }
         })
         .catch(error => {

@@ -1,0 +1,54 @@
+/* Podstawowy styl dla kontenera aktywacji */
+.activation-container {
+    text-align: center;
+    margin-top: 50px;
+    padding: 20px;
+}
+
+/* Styl dla komunikatu o ładowaniu */
+.loading-text {
+    font-size: 20px;
+    font-weight: 500;
+    color: #666;
+}
+
+/* Styl dla komunikatu o sukcesie aktywacji */
+.success-message {
+    font-size: 24px;
+    font-weight: bold;
+    color: #28a745;
+    margin-bottom: 20px;
+}
+
+/* Styl dla komunikatu o błędzie aktywacji */
+.error-message {
+    font-size: 24px;
+    font-weight: bold;
+    color: #dc3545;
+    margin-bottom: 20px;
+}
+
+/* Styl dla szczegółów błędu */
+.error-details {
+    font-size: 16px;
+    color: #888;
+    margin-bottom: 30px;
+}
+
+/* Styl dla przycisku logowania */
+.login-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+/* Efekt na przycisku po najechaniu */
+.login-button:hover {
+    background-color: #0056b3;
+}

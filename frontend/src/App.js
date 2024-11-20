@@ -6,6 +6,7 @@ import Register from './register';  // Import komponentu rejestracji
 import Chat from './chat';
 import './App.css';
 import ForgotPassword from './zapomnialesHasla';
+import Activate from './activate';
 import { useEffect, useState } from 'react';
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
             <BrowserRouter>
                 {loggedIn && <Navbar setLoggedIn={setLoggedIn} setEmail={setEmail} />}
                 <Routes>
+                    <Route path="/activate" element={<Activate />} />
                     <Route path="/" element={<Home email={email} loggedIn={loggedIn} setLoggedIn={setLoggedIn}/>} />
                     <Route path="/login" element={<Login setLoggedIn={setLoggedIn} setEmail={setEmail} />} />
                     <Route path="/register" element={<Register />} /> {/* Nowa trasa */}
