@@ -55,10 +55,20 @@ app.post('/register', async (req, res) => {
         const activationLink = `http://localhost:3080/activate?code=${activationCode}&email=${email}`;
 
         const mailOptions = {
-            from: 'projekt.mwo24@gmail.com',
-            to: email,
-            subject: 'Aktywacja konta',
-            text: `Kliknij w poniższy link, aby aktywować swoje konto: ${activationLink}`,
+            from: '"ProjektMWO2024" <projekt.mwo24@gmail.com>', // Nadawca
+            to: email, // Odbiorca
+            subject: 'Link aktywacyjny',
+            html: `
+                <div style="width: 100%; background-color: rgba(21, 72, 75, 1); padding: 20px; font-family: 'Langar', sans-serif; box-sizing: border-box;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); text-align: center;">
+                        <h1 style="font-size: 24px; color: rgba(21, 72, 75, 1); margin-bottom: 20px;">Link aktywacyjny</h1>
+                        <p style="font-size: 16px; color: black; margin-bottom: 30px;">Twój link weryfikacyjny:</p>
+                        <a href="${activationLink}" style="font-size: 20px; font-weight: bold; background-color: rgba(21, 72, 75, 1); color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; display: inline-block; margin-bottom: 30px;">
+                            Kliknij tutaj, aby aktywować
+                        </a>
+                    </div>
+                </div>
+            `
         };
 
         transporter.sendMail(mailOptions, (err) => {
@@ -246,6 +256,77 @@ app.get('/activate', async (req, res) => {
     } catch (err) {
         console.error('Unhandled error:', err);
         res.status(500).json({ message: 'Wewnętrzny błąd serwera.' });
+    }
+});
+
+app.get('/users', async (req, res) => {
+    const { data, error } = await supabase
+        .from('users')
+        .select('id, email, isActive, opis');
+
+    if (error) {
+        console.error('Error fetching users:', error);
+        return res.status(500).json({ message: 'Błąd serwera' });
+    }
+
+    res.status(200).json(data);
+});
+//informacje o użytkowniku
+app.get('/user/:id', async (req, res) => {
+    const { id } = req.params; // Pobranie ID z parametru ścieżki
+
+
+    try {
+        // Zapytanie do Supabase po użytkownika z określonym ID
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', id)
+            .single(); // Oczekujemy dokładnie jednego wyniku
+
+        if (error || !data) {
+            console.error('Error fetching user:', error || 'No user found');
+            return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+        }
+
+        res.status(200).json(data); // Zwrócenie danych użytkownika
+    } catch (err) {
+        console.error('Unexpected error:', err);
+        res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
+    }
+});
+app.put('/user/:id', async (req, res) => {
+    const userId = req.params.id;  // ID użytkownika z URL
+    const { opis } = req.body;     // Nowy opis z body żądania
+
+    try {
+        // Szukamy użytkownika w bazie danych
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .single();  // Oczekujemy dokładnie jednego użytkownika
+
+        if (error || !user) {
+            return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+        }
+
+        // Aktualizowanie opisu użytkownika
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ opis })  // Zaktualizowanie opisu
+            .eq('id', userId);  // Określamy, którego użytkownika chcemy zaktualizować
+
+        if (updateError) {
+            console.error('Błąd podczas aktualizacji opisu:', updateError);
+            return res.status(500).json({ message: 'Błąd serwera podczas aktualizacji opisu' });
+        }
+
+        // Zwrócenie zaktualizowanego użytkownika
+        res.status(200).json({ message: 'Opis został zaktualizowany pomyślnie', user });
+    } catch (err) {
+        console.error('Błąd podczas aktualizacji opisu:', err);
+        res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
     }
 });
 
