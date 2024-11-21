@@ -74,7 +74,6 @@ app.post('/register', async (req, res) => {
     }
 });
 
-
 // Authorization endpoint
 app.post('/auth', async (req, res) => {
     const { email, password } = req.body;
@@ -95,17 +94,17 @@ app.post('/auth', async (req, res) => {
 
     const result = await bcrypt.compare(password, user.password);
     if (!result) {
-        return res.status(401).json({ message: 'Błędne hasło' });
+        return res.status(401).json({ message: 'Nieprawidłowe hasło.' });
+    } else {
+        const loginData = { email, signInTime: Date.now() };
+        const token = jwt.sign(loginData, jwtSecretKey);
+
+        res.status(200).json({
+            message: 'success',
+            token,
+            userId: user.id // Zwracamy userId
+        });
     }
-
-    const loginData = { email, signInTime: Date.now() };
-    const token = jwt.sign(loginData, jwtSecretKey);
-
-    res.status(200).json({
-        message: 'success',
-        token,
-        userId: user.id // Zwracamy userId
-    });
 });
 
 // Check if account exists endpoint
@@ -206,41 +205,51 @@ app.post('/forgot-password', async (req, res) => {
 });
 
 // Endpoint to reset the password
-app.post('/reset-password', async (req, res) => {
-    const { email, resetCode, newPassword } = req.body;
+app.get('/activate', async (req, res) => {
+    const { code, email } = req.query;
 
-    // Weryfikowanie, czy kod resetu pasuje do zapisanego kodu w bazie
-    const { data, error } = await supabase
-        .from('users')
-        .select('resetCode, password')
-        .eq('email', email)
-        .single(); // Pobieramy tylko jeden rekord
-
-    if (error || !data) {
-        return res.status(400).json({ message: 'Użytkownik nie istnieje.' });
+    if (!code || !email) {
+        return res.status(400).json({ message: 'Brak kodu aktywacyjnego lub adresu e-mail.' });
     }
 
-    if (data.resetCode !== resetCode) {
-        return res.status(400).json({ message: 'Niepoprawny kod resetu.' });
+    try {
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('activationCode, isActive')
+            .eq('email', email)
+            .single();
+
+        if (error || !user) {
+            return res.status(404).json({ message: 'Użytkownik nie istnieje.' });
+        }
+
+        if (user.isActive) {
+            return res.status(400).json({ message: 'Konto jest już aktywne.' });
+        }
+
+        if (user.activationCode !== code) {
+            return res.status(400).json({ message: 'Nieprawidłowy kod aktywacyjny.' });
+        }
+
+        // Aktywacja konta
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ isActive: true, activationCode: null })
+            .eq('email', email);
+
+        if (updateError) {
+            return res.status(500).json({ message: 'Błąd aktywacji konta.' });
+        }
+
+        // Przekierowanie na frontend
+        res.redirect(`http://localhost:3000/activate?status=success&email=${email}`);
+    } catch (err) {
+        console.error('Unhandled error:', err);
+        res.status(500).json({ message: 'Wewnętrzny błąd serwera.' });
     }
-
-    // Haszowanie nowego hasła
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // Zaktualizowanie hasła w bazie danych
-    const { error: updateError } = await supabase
-        .from('users')
-        .update({ password: hashedPassword, resetCode: null }) // Resetowanie kodu resetu po aktualizacji hasła
-        .eq('email', email);
-
-    if (updateError) {
-        return res.status(500).json({ message: 'Błąd podczas resetowania hasła.' });
-    }
-
-    res.status(200).json({ message: 'Hasło zostało pomyślnie zresetowane.' });
 });
 
-// Start the server
+// Starting server
 app.listen(3080, () => {
-    console.log('Server is running on http://localhost:3080');
+    console.log('Server started on port 3080');
 });
