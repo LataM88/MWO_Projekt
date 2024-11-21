@@ -444,7 +444,6 @@ app.put('/user/:id', async (req, res) => {
         res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
     }
 });
-
 // Starting server
 app.listen(3080, () => {
     console.log('Server started on port 3080');
