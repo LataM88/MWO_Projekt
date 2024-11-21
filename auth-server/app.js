@@ -165,12 +165,21 @@ app.post('/forgot-password', async (req, res) => {
     }
 
     // Wysyłanie kodu resetu na e-mail użytkownika
-    const mailOptions = {
-        from: 'projekt.mwo24@gmail.com',  // Adres e-mail nadawcy
-        to: email,  // Używamy adresu e-mail użytkownika jako odbiorcy
-        subject: 'Kod resetu hasła',
-        text: `Twój kod resetu hasła to: ${resetCode}`  // Treść wiadomości
-    };
+const mailOptions = {
+    from: '"ProjektMWO2024" <projekt.mwo24@gmail.com>', // Nadawca
+    to: email, // Odbiorca
+    subject: 'Kod resetu hasła',
+    html: `
+        <div style="width: 100%; background-color: rgba(21, 72, 75, 1); padding: 20px; font-family: 'Langar', sans-serif; box-sizing: border-box;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); text-align: center;">
+                <h1 style="font-size: 24px; color: rgba(21, 72, 75, 1); margin-bottom: 20px;">Kod resetu hasła</h1>
+                <p style="font-size: 16px; color: black; margin-bottom: 30px;">Twój kod resetu hasła to:</p>
+                <div style="font-size: 30px; font-weight: bold; background-color: rgba(21, 72, 75, 1); color: white; padding: 10px 20px; border-radius: 25px; display: inline-block; margin-bottom: 30px;">
+                    ${resetCode}
+        </div>
+    `
+};
+
 
     transporter.sendMail(mailOptions, (err) => {
         if (err) {
