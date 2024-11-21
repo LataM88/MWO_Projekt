@@ -1,27 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import chatImage from '.././img/chat-round-dots-svgrepo-com.png';
 import './userPanel.css';
 
-const UserPanel = ({ onUserClick }) => {
+const UserPanel = () => {
     const [users, setUsers] = useState([]);
     const [isVisible, setIsVisible] = useState(false);
     const buttonRef = useRef(null);
+    const navigate = useNavigate(); // Hook do nawigacji
 
-    // Retrieve the logged-in user's email from localStorage
-    const storedData = localStorage.getItem('user'); // Retrieve the object from localStorage
+    // Pobieranie danych zalogowanego użytkownika z localStorage
+    const storedData = localStorage.getItem('user');
     const userData = storedData ? JSON.parse(storedData) : null;
-    const loggedInUserEmail = userData ? userData.email : null; // Extract email from the parsed object
+    const loggedInUserEmail = userData ? userData.email : null;
 
-    // Fetch users from the server when the component mounts
+    // Pobieranie listy użytkowników
     useEffect(() => {
         const fetchUsers = async () => {
             try {
                 const response = await fetch('http://localhost:3080/api/users');
                 if (response.ok) {
                     const data = await response.json();
-                    // Filter out the logged-in user based on email
                     const filteredUsers = data.filter(user => user.email !== loggedInUserEmail);
-                    setUsers(filteredUsers);  // Set the state with the filtered users
+                    setUsers(filteredUsers);
                 } else {
                     console.error("Failed to fetch users:", response.statusText);
                 }
@@ -30,29 +31,33 @@ const UserPanel = ({ onUserClick }) => {
             }
         };
 
-        fetchUsers();  // Call the function to fetch users
-    }, [loggedInUserEmail]); // Re-run effect if email changes
+        fetchUsers();
+    }, [loggedInUserEmail]);
 
-    // Toggle visibility of the user panel
+    // Przełączanie widoczności panelu
     const togglePanel = () => {
         setIsVisible(!isVisible);
     };
 
+    // Obsługa kliknięcia w użytkownika
+    const handleUserClick = (id) => {
+        navigate(`/profile/${id}`); // Nawigacja do profilu użytkownika na podstawie id
+    };
+
     return (
-        <div className="user-panel-container">
-            <button className="user-panel-button" onClick={togglePanel} ref={buttonRef}>
-               <img src={chatImage} />
+        <div className="userr-panel-container">
+            <button className="userr-panel-button" onClick={togglePanel} ref={buttonRef}>
+                <img className="white-image" src={chatImage} alt="Userr Panel Toggle" />
             </button>
 
-            {/* User Panel with smooth fade-in effect */}
-            <div className={`user-panel ${isVisible ? 'show' : 'hide'}`} style={{ top: `${buttonRef.current?.offsetTop + buttonRef.current?.offsetHeight}px` }}>
-                <ul className="user-list">
+            <div className={`userr-panel ${isVisible ? 'show' : 'hide'}`} style={{ top: `${buttonRef.current?.offsetTop + buttonRef.current?.offsetHeight}px` }}>
+                <ul className="userr-list">
                     {users.length === 0 ? (
-                        <li className="no-users">No users found.</li>  // Handle empty state
+                        <li className="no-users">No users found.</li>
                     ) : (
                         users.map((user) => (
-                            <li key={user.email} onClick={() => onUserClick(user.email)}>
-                                {user.email}  {/* Display the user's email */}
+                            <li key={user.id} onClick={() => handleUserClick(user.id)}>
+                                {user.email} {/* Wyświetlanie emaila, ale przekazywanie id */}
                             </li>
                         ))
                     )}
@@ -63,3 +68,4 @@ const UserPanel = ({ onUserClick }) => {
 };
 
 export default UserPanel;
+

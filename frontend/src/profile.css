@@ -10,7 +10,7 @@ html, body {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    background: linear-gradient(to bottom, #f4f4f4 0%, white 100%);
+    background-color: white;
     border-radius: 12px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     padding: 20px;
@@ -52,7 +52,7 @@ html, body {
     color: red;
 }
 
-.inputButtonHome {
+.inputButtonProfile {
     border: none;
     background-color: rgba(21, 72, 75, 1);
     color: white;
@@ -70,7 +70,7 @@ html, body {
     max-width: 250px;
 }
 
-.inputButtonHome:hover {
+.inputButtonProfile:hover {
     background-color: #005f63;
 }
 

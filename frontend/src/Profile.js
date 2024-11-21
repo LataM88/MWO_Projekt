@@ -36,12 +36,13 @@ function Profile() {
                     <span className={`status ${user.isActive ? "" : "inactive"}`}>
                         {user.isActive ? "Aktywny" : "Nie aktywny"}
                     </span>
-                    <button className="inputButtonHome">Wyślij wiadomość</button>
+                    <button className="inputButtonProfile">Wyślij wiadomość</button>
                 </div>
             </div>
 
             <div className="profile-content">
                 <p className="email">{user.email}</p>
+                <p>{user.id}</p>
                 <div className="email-line"></div>
                 <p className="title">O mnie:</p>
                 <p>{user.opis || "Brak opisu."}</p>

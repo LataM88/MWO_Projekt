@@ -1,5 +1,5 @@
 /* Main User Panel */
-.user-panel {
+.userr-panel {
     position: absolute;
     background-color: rgba(21, 72, 75, 0.85); /* Lighter green background with reduced opacity */
     border-radius: 12px; /* Rounded corners for panel */
@@ -14,20 +14,20 @@
     min-width: 200px;
 }
 
-.user-panel.show {
+.userr-panel.show {
     display: flex;
     transform: translateY(0); /* Smoothly slide in */
     opacity: 1; /* Make the panel fully visible */
 }
 
-.user-panel.hide {
+.userr-panel.hide {
     display: none;
     opacity: 0;
     transform: translateY(-20px); /* Smooth slide-out effect */
 }
 
 /* User List Styles */
-.user-list {
+.userr-list {
     list-style-type: none;
     padding: 0;
     margin: 0;
@@ -41,14 +41,15 @@
     scrollbar-width: none; /* Hide scrollbar for Firefox */
 }
 
-.user-list::-webkit-scrollbar {
+.userr-list::-webkit-scrollbar {
     display: none; /* Hide scrollbar for Webkit browsers (Chrome, Safari) */
 }
 
-.user-list li {
+.userr-list li {
     padding: 12px 20px; /* Add padding to make the items more clickable */
     cursor: pointer;
     font-size: 16px;
+    width: 100%;
     border-radius: 8px;
     margin-bottom: 8px; /* Space between list items */
     transition: background-color 0.3s ease, padding-left 0.2s ease; /* Smooth transition for hover */
@@ -56,13 +57,13 @@
 }
 
 /* Hover Effect for List Items */
-.user-list li:hover {
+.userr-list li:hover {
     background-color: rgba(25, 88, 93, 0.8); /* Slightly lighter and less intense green for hover */
     padding-left: 15px; /* Slight slide effect on hover */
 }
 
 /* Button to show/hide the user panel */
-.user-panel-button {
+.userr-panel-button {
     display: inline-flex; /* Use inline-flex so the button fits around the icon */
     align-items: center;
     justify-content: center;
@@ -78,17 +79,17 @@
 }
 
 /* Ensure the button size matches the icon's size */
-.user-panel-button img {
+.userr-panel-button img {
     width: 80%; /* Slightly smaller than button size, fits within the button */
     height: auto; /* Maintain the aspect ratio of the icon */
 }
 
 /* Hover Effect for the Button */
-.user-panel-button:hover {
+.userr-panel-button:hover {
     background-color: rgba(25, 88, 93, 0.8); /* Lighter hover effect for button */
 }
 
-.user-panel-button:focus {
+.userr-panel-button:focus {
     outline: none; /* Remove outline on focus */
 }
 
@@ -98,23 +99,27 @@
     100% { opacity: 1; }
 }
 
-.user-panel.show {
+.userr-panel.show {
     animation: fadeIn 0.3s ease-in-out;
 }
 
 /* Styles for empty state when no users are found */
-.user-list li.no-users {
+.userr-list li.no-users {
     text-align: center;
     color: #888;
     font-style: italic;
 }
 
 /* Keep button color changed until the panel is closed */
-.user-panel.show .user-panel-button {
+.userr-panel.show .user-panel-button {
     background-color: rgba(25, 88, 93, 0.9); /* Darker green when panel is open */
 }
 
 /* Revert the button color to the original when the panel is closed */
-.user-panel.hide .user-panel-button {
+.userr-panel.hide .user-panel-button {
     background-color: rgba(21, 72, 75, 0.85); /* Original lighter green */
+}
+
+.white-image {
+    filter: brightness(0) invert(1);
 }
