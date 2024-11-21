@@ -55,7 +55,7 @@
     height: 40px; /* Ustalenie wysokości pola */
     border: 1px solid #ccc; /* Kolor obramowania */
     transition: border-color 0.3s; /* Płynna zmiana koloru obramowania */
-    font-family: "Langar";
+    font-family: "Julee", cursive;
 }
 
 /* Stylizacja pola po kliknięciu */
