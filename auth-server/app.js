@@ -54,6 +54,11 @@ app.post('/register', async (req, res) => {
 });
 
 // Authorization endpoint
+// Import nodemailer (jest już zaimportowany)
+
+const generateTwoFactorCode = () => Math.floor(100000 + Math.random() * 900000).toString();
+
+// Modyfikacja endpointu logowania
 app.post('/auth', async (req, res) => {
     const { email, password } = req.body;
 
@@ -71,17 +76,81 @@ app.post('/auth', async (req, res) => {
     if (!result) {
         return res.status(401).json({ message: 'Błędne hasło' });
     } else {
-        const loginData = { email, signInTime: Date.now() };
-        const token = jwt.sign(loginData, jwtSecretKey);
+        // Generowanie kodu 2FA
+        const twoFactorCode = generateTwoFactorCode();
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ twoFactorCode })
+            .eq('id', user.id);
 
+        if (updateError) {
+            console.error('Błąd aktualizacji kodu 2FA:', updateError);
+            return res.status(500).json({ message: 'Błąd serwera podczas generowania kodu 2FA' });
+        }
 
-        res.status(200).json({
-            message: 'success',
-            token,
-            userId: user.id // Zwracamy userId
+        // Wysyłanie kodu 2FA e-mailem
+const mailOptions = {
+    from: '"ProjektMWO2024" <projekt.mwo24@gmail.com>', // Nadawca
+    to: email, // Odbiorca
+    subject: 'Kod weryfikacyjny',
+    html: `
+        <div style="width: 100%; background-color: rgba(21, 72, 75, 1); padding: 20px; font-family: 'Langar', sans-serif; box-sizing: border-box;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); text-align: center;">
+                <h1 style="font-size: 24px; color: rgba(21, 72, 75, 1); margin-bottom: 20px;">Kod weryfikacyjny</h1>
+                <p style="font-size: 16px; color: black; margin-bottom: 30px;">Twój kod weryfikacyjny:</p>
+                <div style="font-size: 30px; font-weight: bold; background-color: rgba(21, 72, 75, 1); color: white; padding: 10px 20px; border-radius: 25px; display: inline-block; margin-bottom: 30px;">
+                    ${twoFactorCode}
+        </div>
+    `
+};
+
+        transporter.sendMail(mailOptions, (err) => {
+            if (err) {
+                console.error('Błąd wysyłania kodu 2FA:', err);
+                return res.status(500).json({ message: 'Błąd wysyłania kodu 2FA' });
+            }
+
+            res.status(200).json({ message: 'success', userId: user.id });
         });
     }
 });
+
+// Endpoint do weryfikacji kodu 2FA
+app.post('/verify-2fa', async (req, res) => {
+    const { userId, twoFactorCode } = req.body;
+
+    const { data: user, error } = await supabase
+        .from('users')
+        .select('twoFactorCode')
+        .eq('id', userId)
+        .single();
+
+    if (error || !user) {
+        return res.status(400).json({ message: 'Nieprawidłowy użytkownik.' });
+    }
+
+    if (user.twoFactorCode !== twoFactorCode) {
+        return res.status(401).json({ message: 'Nieprawidłowy kod weryfikacyjny.' });
+    }
+
+    // Usunięcie kodu po pomyślnej weryfikacji
+    const { error: updateError } = await supabase
+        .from('users')
+        .update({ twoFactorCode: null })
+        .eq('id', userId);
+
+    if (updateError) {
+        console.error('Błąd usuwania kodu 2FA:', updateError);
+        return res.status(500).json({ message: 'Błąd serwera' });
+    }
+
+    // Generowanie tokenu JWT
+    const loginData = { userId, signInTime: Date.now() };
+    const token = jwt.sign(loginData, jwtSecretKey);
+
+    res.status(200).json({ message: 'Weryfikacja pomyślna', token });
+});
+
 
 // Check if account exists endpoint
 app.post('/check-account', async (req, res) => {
