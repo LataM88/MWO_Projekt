@@ -254,6 +254,41 @@ app.get('/user/:id', async (req, res) => {
         res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
     }
 });
+app.put('/user/:id', async (req, res) => {
+    const userId = req.params.id;  // ID użytkownika z URL
+    const { opis } = req.body;     // Nowy opis z body żądania
+
+    try {
+        // Szukamy użytkownika w bazie danych
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .single();  // Oczekujemy dokładnie jednego użytkownika
+
+        if (error || !user) {
+            return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+        }
+
+        // Aktualizowanie opisu użytkownika
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ opis })  // Zaktualizowanie opisu
+            .eq('id', userId);  // Określamy, którego użytkownika chcemy zaktualizować
+
+        if (updateError) {
+            console.error('Błąd podczas aktualizacji opisu:', updateError);
+            return res.status(500).json({ message: 'Błąd serwera podczas aktualizacji opisu' });
+        }
+
+        // Zwrócenie zaktualizowanego użytkownika
+        res.status(200).json({ message: 'Opis został zaktualizowany pomyślnie', user });
+    } catch (err) {
+        console.error('Błąd podczas aktualizacji opisu:', err);
+        res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
+    }
+});
+
 // Start server
 app.listen(3080, () => {
     console.log('Server is running on port 3080');

@@ -60,11 +60,6 @@ html, body {
     font-size: 1rem;
     border-radius: 25px;
     cursor: pointer;
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    white-space: nowrap;
     transition: background-color 0.3s ease;
     width: 100%;
     max-width: 250px;
@@ -80,6 +75,8 @@ html, body {
     margin-bottom: 10px;
     line-height: 1.5;
     text-align: left;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .profile-content p.email {
@@ -97,3 +94,46 @@ html, body {
     font-weight: bold;
     margin-bottom: 5px;
 }
+
+.edit-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.edit-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.edit-button,
+.save-button,
+.cancel-button {
+    border: none;
+    background-color: #005f63;
+    color: white;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.edit-button:hover,
+.save-button:hover,
+.cancel-button:hover {
+    background-color: #008b94;
+}
+
+.cancel-button {
+    background-color: #d9534f;
+}
+
+.cancel-button:hover {
+    background-color: #c9302c;
+}
+
