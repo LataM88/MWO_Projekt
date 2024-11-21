@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import './activate.css'; // Załaduj plik CSS
+import myImage from './img/homechat.png';
 
 const Activate = () => {
     const [searchParams] = useSearchParams();
@@ -35,25 +36,30 @@ const Activate = () => {
     // Wyświetlenie różnych komunikatów w zależności od statusu
     return (
         <div className="activation-container">
-            {loading && <p className="loading-text">Aktywacja konta w toku...</p>}
-            {activationStatus === 'success' && (
-                <>
-                    <h1 className="success-message">{message}</h1>
-                    <p>Konto zostało aktywowane. Kliknij poniżej, aby przejść do logowania.</p>
-                    <button
-                        className="login-button"
-                        onClick={() => navigate('/login')} // Przekierowanie na stronę logowania
-                    >
-                        Przejdź do logowania
-                    </button>
-                </>
-            )}
-            {activationStatus === 'error' && (
-                <>
-                    <h1 className="error-message">{message}</h1>
-                    <p className="error-details">Proszę sprawdzić link aktywacyjny lub skontaktować się z obsługą.</p>
-                </>
-            )}
+            <div className="activation-content">
+                <img src={myImage} alt="" className="activation-image" />
+                <div className="activation-info">
+                    {loading && <p className="loading-text">Aktywacja konta w toku...</p>}
+                    {activationStatus === 'success' && (
+                        <>
+                            <h1 className="success-message">{message}</h1>
+                            <p className="login-prompt">Konto zostało aktywowane. Kliknij poniżej, aby przejść do logowania.</p>
+                            <button
+                                className="login-button"
+                                onClick={() => navigate('/login')} // Przekierowanie na stronę logowania
+                            >
+                                Przejdź do logowania
+                            </button>
+                        </>
+                    )}
+                    {activationStatus === 'error' && (
+                        <>
+                            <h1 className="error-message">{message}</h1>
+                            <p className="error-details">Proszę sprawdzić link aktywacyjny lub skontaktować się z obsługą.</p>
+                        </>
+                    )}
+                </div>
+            </div>
         </div>
     );
 };
