@@ -9,7 +9,7 @@
 }
 
 .clock {
-    flex: 1;
+    flex: 1; /* Umożliwia równomierne rozmieszczenie elementów */
     text-align: center;
     font-size: 24px;
     font-weight: bold;
@@ -114,4 +114,10 @@
 
 .dropdown-item {
     text-align: center;
+}
+
+.kontrolki {
+    margin-left: 20px; /* Odsunięcie od napisu "Strona Główna" */
+    display: flex;
+    align-items: center; /* Wyśrodkowanie w pionie */
 }

@@ -85,6 +85,7 @@ const Login = (props) => {
             },
             body: JSON.stringify({ email, password })
         })
+
         .then(response => response.json())
         .then(data => {
             if (data.message === 'success') {
@@ -101,6 +102,26 @@ const Login = (props) => {
         .catch(error => {
             console.error('Error logging in:', error);
         });
+
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === 'success') {
+                    localStorage.setItem("user", JSON.stringify({
+                        email,
+                        token: data.token,
+                        userId: data.userId // Zapisujemy userId
+                    }));
+                    props.setLoggedIn(true);
+                    props.setEmail(email);
+                    navigate("/");
+                } else {
+                    window.alert("Błędny email lub hasło!");
+                }
+            })
+            .catch(error => {
+                console.error('Błąd logowania:', error);
+            });
+
     };
 
     const [rememberMe, setRememberMe] = useState(false);
