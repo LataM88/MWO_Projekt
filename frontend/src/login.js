@@ -10,12 +10,14 @@ const Login = (props) => {
     const [password, setPassword] = useState("");
     const [emailError, setEmailError] = useState("");
     const [passwordError, setPasswordError] = useState("");
+    const [rememberMe, setRememberMe] = useState(false);
     const navigate = useNavigate();
 
     const onButtonClick = () => {
         setEmailError("");
         setPasswordError("");
 
+        // Weryfikacja e-mail
         if (email === "") {
             setEmailError("Proszę wprowadź email");
             return;
@@ -26,6 +28,7 @@ const Login = (props) => {
             return;
         }
 
+        // Weryfikacja hasła
         if (password === "") {
             setPasswordError("Wprowadź hasło");
             return;
@@ -56,9 +59,7 @@ const Login = (props) => {
             body: JSON.stringify({ email })
         })
         .then(response => response.json())
-        .then(data => {
-            callback(data?.userExists);
-        })
+        .then(data => callback(data?.userExists))
         .catch(error => {
             console.error('Błąd podczas sprawdzania istnienia konta:', error);
             callback(false);
@@ -94,8 +95,6 @@ const Login = (props) => {
             console.error('Błąd logowania:', error);
         });
     };
-
-    const [rememberMe, setRememberMe] = useState(false);
 
     return (
         <div className="mainContainerLogin">
