@@ -54,6 +54,7 @@ app.post('/register', async (req, res) => {
         // Wysyłanie linku aktywacyjnego
         const activationLink = `http://localhost:3080/activate?code=${activationCode}&email=${email}`;
 
+
 const mailOptions = {
     from: '"ProjektMWO2024" <projekt.mwo24@gmail.com>', // Nadawca
     to: email, // Odbiorca
@@ -69,6 +70,22 @@ const mailOptions = {
         </div>
     `
 };
+
+        const mailOptions = {
+            from: '"ProjektMWO2024" <projekt.mwo24@gmail.com>', // Nadawca
+            to: email, // Odbiorca
+            subject: 'Kod weryfikacyjny',
+            html: `
+                <div style="width: 100%; background-color: rgba(21, 72, 75, 1); padding: 20px; font-family: 'Langar', sans-serif; box-sizing: border-box;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); text-align: center;">
+                        <h1 style="font-size: 24px; color: rgba(21, 72, 75, 1); margin-bottom: 20px;">Kod weryfikacyjny</h1>
+                        <p style="font-size: 16px; color: black; margin-bottom: 30px;">Twój kod weryfikacyjny:</p>
+                        <a href="${activationLink}" style="font-size: 20px; font-weight: bold; background-color: rgba(21, 72, 75, 1); color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; display: inline-block; margin-bottom: 30px;">
+                                                    Kliknij tutaj, aby aktywować
+                                                </a>
+            `
+        };
+
 
         transporter.sendMail(mailOptions, (err) => {
             if (err) {
@@ -443,7 +460,6 @@ app.put('/user/:id', async (req, res) => {
         res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
     }
 });
-
 // Starting server
 app.listen(3080, () => {
     console.log('Server started on port 3080');
