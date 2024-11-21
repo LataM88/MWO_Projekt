@@ -55,6 +55,7 @@ app.post('/register', async (req, res) => {
         const activationLink = `http://localhost:3080/activate?code=${activationCode}&email=${email}`;
 
 
+
         const mailOptions = {
             from: 'projekt.mwo24@gmail.com',
             to: email,
@@ -264,49 +265,49 @@ app.get('/users', async (req, res) => {
 app.get('/activate', async (req, res) => {
     const { code, email } = req.query;
 
-    if (!code || !email) {
-        return res.status(400).json({ message: 'Brak kodu aktywacyjnego lub adresu e-mail.' });
-    }
-
-    try {
-        // Pobierz użytkownika na podstawie email
-        const { data: user, error } = await supabase
-            .from('users')
-            .select('activationCode, isActive')
-            .eq('email', email)
-            .single();
-
-        if (error || !user) {
-            return res.status(404).json({ message: 'Użytkownik nie istnieje.' });
+        if (!code || !email) {
+            return res.status(400).json({ message: 'Brak kodu aktywacyjnego lub adresu e-mail.' });
         }
 
-        // Sprawdź, czy konto jest już aktywne
-        if (user.isActive) {
-            return res.status(400).json({ message: 'Konto jest już aktywne.' });
+        try {
+            // Pobierz użytkownika na podstawie email
+            const { data: user, error } = await supabase
+                .from('users')
+                .select('activationCode, isActive')
+                .eq('email', email)
+                .single();
+
+            if (error || !user) {
+                return res.status(404).json({ message: 'Użytkownik nie istnieje.' });
+            }
+
+            // Sprawdź, czy konto jest już aktywne
+            if (user.isActive) {
+                return res.status(400).json({ message: 'Konto jest już aktywne.' });
+            }
+
+            // Sprawdź, czy kod aktywacyjny jest poprawny
+            if (user.activationCode !== code) {
+                return res.status(400).json({ message: 'Nieprawidłowy kod aktywacyjny.' });
+            }
+
+            // Zaktualizuj konto użytkownika
+            const { error: updateError } = await supabase
+                .from('users')
+                .update({ isActive: true, activationCode: null }) // Usuwamy kod aktywacyjny
+                .eq('email', email);
+
+            if (updateError) {
+                console.error('Error during account activation:', updateError);
+                return res.status(500).json({ message: 'Błąd aktywacji konta.' });
+            }
+
+            // Zamiast zwracać JSON, przekierowujemy do strony frontendowej
+            res.redirect(`http://localhost:3000/activate?status=success&email=${email}`);
+        } catch (err) {
+            console.error('Unhandled error:', err);
+            res.status(500).json({ message: 'Wewnętrzny błąd serwera.' });
         }
-
-        // Sprawdź, czy kod aktywacyjny jest poprawny
-        if (user.activationCode !== code) {
-            return res.status(400).json({ message: 'Nieprawidłowy kod aktywacyjny.' });
-        }
-
-        // Zaktualizuj konto użytkownika
-        const { error: updateError } = await supabase
-            .from('users')
-            .update({ isActive: true, activationCode: null }) // Usuwamy kod aktywacyjny
-            .eq('email', email);
-
-        if (updateError) {
-            console.error('Error during account activation:', updateError);
-            return res.status(500).json({ message: 'Błąd aktywacji konta.' });
-        }
-
-        // Zamiast zwracać JSON, przekierowujemy do strony frontendowej
-        res.redirect(`http://localhost:3000/activate?status=success&email=${email}`);
-    } catch (err) {
-        console.error('Unhandled error:', err);
-        res.status(500).json({ message: 'Wewnętrzny błąd serwera.' });
-    }
 });
 
 
@@ -318,63 +319,52 @@ app.get('/activate', async (req, res) => {
     res.status(200).json(data);
 });
 //informacje o użytkowniku
-app.get('/user/:id', async (req, res) => {
-    const { id } = req.params; // Pobranie ID z parametru ścieżki
-    console.log(`Fetching user with ID: ${id}`);
+app.get('/activate', async (req, res) => {
+    const { code, email } = req.query;
 
-    try {
-        // Zapytanie do Supabase po użytkownika z określonym ID
-        const { data, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', id)
-            .single(); // Oczekujemy dokładnie jednego wyniku
-
-        if (error || !data) {
-            console.error('Error fetching user:', error || 'No user found');
-            return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
-        }
-
-        res.status(200).json(data); // Zwrócenie danych użytkownika
-    } catch (err) {
-        console.error('Unexpected error:', err);
-        res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
+    if (!code || !email) {
+        return res.status(400).json({ message: 'Brak kodu aktywacyjnego lub adresu e-mail.' });
     }
-});
-app.put('/user/:id', async (req, res) => {
-    const userId = req.params.id;  // ID użytkownika z URL
-    const { opis } = req.body;     // Nowy opis z body żądania
 
     try {
-        // Szukamy użytkownika w bazie danych
+        // Pobierz użytkownika z bazy danych
         const { data: user, error } = await supabase
             .from('users')
-            .select('*')
-            .eq('id', userId)
-            .single();  // Oczekujemy dokładnie jednego użytkownika
+            .select('activationCode, isActive')
+            .eq('email', email)
+            .single();
 
         if (error || !user) {
-            return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+            return res.status(404).json({ message: 'Użytkownik nie istnieje.' });
         }
 
-        // Aktualizowanie opisu użytkownika
+        if (user.isActive) {
+            return res.status(400).json({ message: 'Konto jest już aktywne.' });
+        }
+
+        if (user.activationCode !== code) {
+            return res.status(400).json({ message: 'Nieprawidłowy kod aktywacyjny.' });
+        }
+
+        // Aktywuj konto
         const { error: updateError } = await supabase
             .from('users')
-            .update({ opis })  // Zaktualizowanie opisu
-            .eq('id', userId);  // Określamy, którego użytkownika chcemy zaktualizować
+            .update({ isActive: true, activationCode: null })
+            .eq('email', email);
 
         if (updateError) {
-            console.error('Błąd podczas aktualizacji opisu:', updateError);
-            return res.status(500).json({ message: 'Błąd serwera podczas aktualizacji opisu' });
+            console.error('Error during account activation:', updateError);
+            return res.status(500).json({ message: 'Błąd aktywacji konta.' });
         }
 
-        // Zwrócenie zaktualizowanego użytkownika
-        res.status(200).json({ message: 'Opis został zaktualizowany pomyślnie', user });
+        // Przekierowanie na frontend
+        res.redirect(`http://localhost:3000/activate?status=success&email=${email}`);
     } catch (err) {
-        console.error('Błąd podczas aktualizacji opisu:', err);
-        res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
+        console.error('Unhandled error:', err);
+        res.status(500).json({ message: 'Wewnętrzny błąd serwera.' });
     }
 });
+
 
 
 // Start server
