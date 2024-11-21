@@ -249,6 +249,77 @@ app.get('/activate', async (req, res) => {
     }
 });
 
+app.get('/users', async (req, res) => {
+    const { data, error } = await supabase
+        .from('users')
+        .select('id, email, isActive, opis');
+
+    if (error) {
+        console.error('Error fetching users:', error);
+        return res.status(500).json({ message: 'Błąd serwera' });
+    }
+
+    res.status(200).json(data);
+});
+//informacje o użytkowniku
+app.get('/user/:id', async (req, res) => {
+    const { id } = req.params; // Pobranie ID z parametru ścieżki
+
+
+    try {
+        // Zapytanie do Supabase po użytkownika z określonym ID
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', id)
+            .single(); // Oczekujemy dokładnie jednego wyniku
+
+        if (error || !data) {
+            console.error('Error fetching user:', error || 'No user found');
+            return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+        }
+
+        res.status(200).json(data); // Zwrócenie danych użytkownika
+    } catch (err) {
+        console.error('Unexpected error:', err);
+        res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
+    }
+});
+app.put('/user/:id', async (req, res) => {
+    const userId = req.params.id;  // ID użytkownika z URL
+    const { opis } = req.body;     // Nowy opis z body żądania
+
+    try {
+        // Szukamy użytkownika w bazie danych
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .single();  // Oczekujemy dokładnie jednego użytkownika
+
+        if (error || !user) {
+            return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+        }
+
+        // Aktualizowanie opisu użytkownika
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ opis })  // Zaktualizowanie opisu
+            .eq('id', userId);  // Określamy, którego użytkownika chcemy zaktualizować
+
+        if (updateError) {
+            console.error('Błąd podczas aktualizacji opisu:', updateError);
+            return res.status(500).json({ message: 'Błąd serwera podczas aktualizacji opisu' });
+        }
+
+        // Zwrócenie zaktualizowanego użytkownika
+        res.status(200).json({ message: 'Opis został zaktualizowany pomyślnie', user });
+    } catch (err) {
+        console.error('Błąd podczas aktualizacji opisu:', err);
+        res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
+    }
+});
+
 // Starting server
 app.listen(3080, () => {
     console.log('Server started on port 3080');
