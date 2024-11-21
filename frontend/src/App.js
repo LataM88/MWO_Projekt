@@ -3,6 +3,7 @@ import Home from './home';
 import Login from './login';
 import Navbar from './components/navbar';
 import Register from './register';  // Import komponentu rejestracji
+import Profile from './Profile';
 import Chat from './chat';
 import './App.css';
 import ForgotPassword from './zapomnialesHasla';
@@ -38,6 +39,7 @@ function App() {
             <BrowserRouter>
                 {loggedIn && <Navbar setLoggedIn={setLoggedIn} setEmail={setEmail} />}
                 <Routes>
+                    <Route path="/profile/:userId" element={<Profile />} />
                     <Route path="/" element={<Home email={email} loggedIn={loggedIn} setLoggedIn={setLoggedIn}/>} />
                     <Route path="/login" element={<Login setLoggedIn={setLoggedIn} setEmail={setEmail} />} />
                     <Route path="/register" element={<Register />} /> {/* Nowa trasa */}

@@ -1,0 +1,139 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+    background: radial-gradient(circle, #1a4d58, #0CB0B6);
+}
+
+.mainprofile {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    max-width: 800px;
+    width: 90%;
+    margin: 40px auto;
+}
+
+.profile-header {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.profile-image {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background-color: #ccc;
+    object-fit: cover;
+    border: 2px solid #ddd;
+}
+
+.profile-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.profile-actions .status {
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: green;
+    margin-bottom: 10px;
+}
+
+.profile-actions .status.inactive {
+    color: red;
+}
+
+.inputButtonProfile {
+    border: none;
+    background-color: rgba(21, 72, 75, 1);
+    color: white;
+    padding: 10px 30px;
+    font-size: 1rem;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%;
+    max-width: 250px;
+}
+
+.inputButtonProfile:hover {
+    background-color: #005f63;
+}
+
+.profile-content p {
+    font-size: 1.2rem;
+    color: #333;
+    margin-bottom: 10px;
+    line-height: 1.5;
+    text-align: left;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.profile-content p.email {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #2e3d42;
+    text-align: left;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #2e3d42;
+    padding-bottom: 10px;
+}
+
+.profile-content .title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.edit-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.edit-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.edit-button,
+.save-button,
+.cancel-button {
+    border: none;
+    background-color: #005f63;
+    color: white;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.edit-button:hover,
+.save-button:hover,
+.cancel-button:hover {
+    background-color: #008b94;
+}
+
+.cancel-button {
+    background-color: #d9534f;
+}
+
+.cancel-button:hover {
+    background-color: #c9302c;
+}
+
