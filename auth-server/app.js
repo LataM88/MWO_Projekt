@@ -1,5 +1,6 @@
 import express from 'express';
 import nodemailer from 'nodemailer';
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
@@ -37,21 +38,42 @@ app.post('/register', async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Generowanie unikalnego kodu aktywacyjnego
+        const activationCode = crypto.randomBytes(16).toString('hex');
+
         const { data, error } = await supabase
             .from('users')
-            .insert([{ email, password: hashedPassword, isActive: true }]);
+            .insert([{ email, password: hashedPassword, isActive: false, activationCode }]);
 
         if (error) {
             console.error('Error inserting user:', error);
             return res.status(500).json({ message: 'Błąd rejestracji' });
         }
 
-        res.status(200).json({ message: 'success' });
+        // Wysyłanie linku aktywacyjnego
+        const activationLink = `http://localhost:3080/activate?code=${activationCode}&email=${email}`;
+
+        const mailOptions = {
+            from: 'projekt.mwo24@gmail.com',
+            to: email,
+            subject: 'Aktywacja konta',
+            text: `Kliknij w poniższy link, aby aktywować swoje konto: ${activationLink}`,
+        };
+
+        transporter.sendMail(mailOptions, (err) => {
+            if (err) {
+                console.error("Error sending email:", err);
+                return res.status(500).json({ message: 'Błąd wysyłania e-maila.' });
+            }
+            res.status(200).json({ message: "success" });
+        });
     } catch (err) {
         console.error('Unhandled error:', err);
         res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
     }
 });
+
 
 // Authorization endpoint
 app.post('/auth', async (req, res) => {
@@ -67,20 +89,23 @@ app.post('/auth', async (req, res) => {
         return res.status(400).json({ message: 'Użytkownik nie istnieje.' });
     }
 
+    if (!user.isActive) {
+        return res.status(403).json({ message: 'Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.' });
+    }
+
     const result = await bcrypt.compare(password, user.password);
     if (!result) {
         return res.status(401).json({ message: 'Błędne hasło' });
-    } else {
-        const loginData = { email, signInTime: Date.now() };
-        const token = jwt.sign(loginData, jwtSecretKey);
-
-
-        res.status(200).json({
-            message: 'success',
-            token,
-            userId: user.id // Zwracamy userId
-        });
     }
+
+    const loginData = { email, signInTime: Date.now() };
+    const token = jwt.sign(loginData, jwtSecretKey);
+
+    res.status(200).json({
+        message: 'success',
+        token,
+        userId: user.id // Zwracamy userId
+    });
 });
 
 // Check if account exists endpoint
@@ -136,7 +161,6 @@ const transporter = nodemailer.createTransport({
 });
 
 // Endpoint to send password reset link
-// Endpoint to send password reset link
 app.post('/forgot-password', async (req, res) => {
     const { email } = req.body;  // Pobieramy e-mail użytkownika z zapytania
 
@@ -181,7 +205,6 @@ app.post('/forgot-password', async (req, res) => {
     });
 });
 
-
 // Endpoint to reset the password
 app.post('/reset-password', async (req, res) => {
     const { email, resetCode, newPassword } = req.body;
@@ -197,99 +220,27 @@ app.post('/reset-password', async (req, res) => {
         return res.status(400).json({ message: 'Użytkownik nie istnieje.' });
     }
 
-    // Sprawdzanie, czy kod resetu się zgadza
     if (data.resetCode !== resetCode) {
-        return res.status(400).json({ message: 'Nieprawidłowy kod resetu.' });
+        return res.status(400).json({ message: 'Niepoprawny kod resetu.' });
     }
 
-    // Szyfrowanie nowego hasła
+    // Haszowanie nowego hasła
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Aktualizowanie hasła i usuwanie resetCode z bazy
+    // Zaktualizowanie hasła w bazie danych
     const { error: updateError } = await supabase
         .from('users')
-        .update({ password: hashedPassword, resetCode: null }) // Resetujemy kod po zmianie hasła
+        .update({ password: hashedPassword, resetCode: null }) // Resetowanie kodu resetu po aktualizacji hasła
         .eq('email', email);
 
     if (updateError) {
-        return res.status(500).json({ message: 'Błąd aktualizacji hasła.' });
+        return res.status(500).json({ message: 'Błąd podczas resetowania hasła.' });
     }
 
-    res.status(200).json({ message: 'Hasło zostało zmienione pomyślnie.' });
-});
-//lista użytkowników
-app.get('/users', async (req, res) => {
-    const { data, error } = await supabase
-        .from('users')
-        .select('id, email, isActive, opis');
-
-    if (error) {
-        console.error('Error fetching users:', error);
-        return res.status(500).json({ message: 'Błąd serwera' });
-    }
-
-    res.status(200).json(data);
-});
-//informacje o użytkowniku
-app.get('/user/:id', async (req, res) => {
-    const { id } = req.params; // Pobranie ID z parametru ścieżki
-    console.log(`Fetching user with ID: ${id}`);
-
-    try {
-        // Zapytanie do Supabase po użytkownika z określonym ID
-        const { data, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', id)
-            .single(); // Oczekujemy dokładnie jednego wyniku
-
-        if (error || !data) {
-            console.error('Error fetching user:', error || 'No user found');
-            return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
-        }
-
-        res.status(200).json(data); // Zwrócenie danych użytkownika
-    } catch (err) {
-        console.error('Unexpected error:', err);
-        res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
-    }
-});
-app.put('/user/:id', async (req, res) => {
-    const userId = req.params.id;  // ID użytkownika z URL
-    const { opis } = req.body;     // Nowy opis z body żądania
-
-    try {
-        // Szukamy użytkownika w bazie danych
-        const { data: user, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', userId)
-            .single();  // Oczekujemy dokładnie jednego użytkownika
-
-        if (error || !user) {
-            return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
-        }
-
-        // Aktualizowanie opisu użytkownika
-        const { error: updateError } = await supabase
-            .from('users')
-            .update({ opis })  // Zaktualizowanie opisu
-            .eq('id', userId);  // Określamy, którego użytkownika chcemy zaktualizować
-
-        if (updateError) {
-            console.error('Błąd podczas aktualizacji opisu:', updateError);
-            return res.status(500).json({ message: 'Błąd serwera podczas aktualizacji opisu' });
-        }
-
-        // Zwrócenie zaktualizowanego użytkownika
-        res.status(200).json({ message: 'Opis został zaktualizowany pomyślnie', user });
-    } catch (err) {
-        console.error('Błąd podczas aktualizacji opisu:', err);
-        res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
-    }
+    res.status(200).json({ message: 'Hasło zostało pomyślnie zresetowane.' });
 });
 
-// Start server
+// Start the server
 app.listen(3080, () => {
-    console.log('Server is running on port 3080');
+    console.log('Server is running on http://localhost:3080');
 });

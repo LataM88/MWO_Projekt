@@ -43,18 +43,22 @@ const Register = () => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ email, password }) // Usunięcie aktywacji
+            body: JSON.stringify({ email, password })
         })
         .then(response => response.json())
         .then(data => {
             if (data.message === "success") {
-                alert("Rejestracja zakończona sukcesem!");
-                navigate("/login"); // Przekierowanie do logowania
+                alert("Rejestracja zakończona sukcesem! Sprawdź swoją skrzynkę e-mail, aby aktywować konto.");
+                navigate("/login");
             } else {
                 alert("Wystąpił błąd: " + data.message);
             }
+        })
+        .catch(error => {
+            alert("Wystąpił błąd podczas rejestracji: " + error.message);
         });
     };
+
 
     return (
         <div className="mainContainerRegister">

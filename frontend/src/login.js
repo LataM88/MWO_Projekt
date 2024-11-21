@@ -10,41 +10,32 @@ const Login = (props) => {
     const [password, setPassword] = useState("");
     const [emailError, setEmailError] = useState("");
     const [passwordError, setPasswordError] = useState("");
+    const [rememberMe, setRememberMe] = useState(false);
     const navigate = useNavigate();
 
     const onButtonClick = () => {
         setEmailError("");
         setPasswordError("");
 
+        // Weryfikacja e-mail
         if (email === "") {
-
-            setEmailError("Prosze wprowadź email");
-
-            setEmailError("Podaj swój email");
-
+            setEmailError("Proszę wprowadź email");
             return;
         }
 
         if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
-
-            setEmailError("Wprowadź poprawny eamil");
-
-            setEmailError("Podaj poprawny email");
-
+            setEmailError("Wprowadź poprawny email");
             return;
         }
 
+        // Weryfikacja hasła
         if (password === "") {
             setPasswordError("Wprowadź hasło");
             return;
         }
 
         if (password.length < 8) {
-
             setPasswordError("Hasło musi mieć 8 znaków lub więcej");
-
-            setPasswordError("Hasło musi mieć 8 znaków lub wiecej");
-
             return;
         }
 
@@ -68,11 +59,9 @@ const Login = (props) => {
             body: JSON.stringify({ email })
         })
         .then(response => response.json())
-        .then(data => {
-            callback(data?.userExists);
-        })
+        .then(data => callback(data?.userExists))
         .catch(error => {
-            console.error('Error checking account existence:', error);
+            console.error('Błąd podczas sprawdzania istnienia konta:', error);
             callback(false);
         });
     };
@@ -85,27 +74,27 @@ const Login = (props) => {
             },
             body: JSON.stringify({ email, password })
         })
-            .then(response => response.json())
-            .then(data => {
-                if (data.message === 'success') {
-                    localStorage.setItem("user", JSON.stringify({
-                        email,
-                        token: data.token,
-                        userId: data.userId // Zapisujemy userId
-                    }));
-                    props.setLoggedIn(true);
-                    props.setEmail(email);
-                    navigate("/");
-                } else {
-                    window.alert("Błędny email lub hasło!");
-                }
-            })
-            .catch(error => {
-                console.error('Błąd logowania:', error);
-            });
+        .then(response => response.json())
+        .then(data => {
+            if (data.message === 'success') {
+                localStorage.setItem("user", JSON.stringify({
+                    email,
+                    token: data.token,
+                    userId: data.userId // Zapisujemy userId
+                }));
+                props.setLoggedIn(true);
+                props.setEmail(email);
+                navigate("/");
+            } else if (data.message === 'Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.') {
+                window.alert('Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.');
+            } else {
+                window.alert("Błędny email lub hasło!");
+            }
+        })
+        .catch(error => {
+            console.error('Błąd logowania:', error);
+        });
     };
-
-    const [rememberMe, setRememberMe] = useState(false);
 
     return (
         <div className="mainContainerLogin">
@@ -120,7 +109,7 @@ const Login = (props) => {
                 <div className="inputContainerLogin">
                     <input
                         value={email}
-                        placeholder="Wprowadz swój E-mail."
+                        placeholder="Wprowadź swój E-mail."
                         onChange={ev => setEmail(ev.target.value)}
                         className="inputBoxLogin"
                     />
@@ -131,7 +120,7 @@ const Login = (props) => {
                     <input
                         type="password"
                         value={password}
-                        placeholder="Wprowadz swoje hasło."
+                        placeholder="Wprowadź swoje hasło."
                         onChange={ev => setPassword(ev.target.value)}
                         className="inputBoxLogin"
                     />
