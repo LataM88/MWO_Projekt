@@ -1,5 +1,5 @@
-/* Import czcionki Julee z Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Julee&display=swap');
+/* Import czcionki Langar z Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Langar&display=swap');
 
 /* Resetowanie marginesów i paddingu, box-sizing */
 * {
@@ -10,7 +10,7 @@
 
 /* Domyślny styl ciała */
 body {
-    font-family: 'Julee', cursive; /* Ustawienie czcionki Julee dla całego ciała aplikacji */
+    font-family: 'Langar', cursive; /* Ustawienie czcionki Langar dla całego ciała aplikacji */
     background: radial-gradient(circle, #1a4d58, #0CB0B6);
 }
 
@@ -56,6 +56,7 @@ body {
     background-color: #01C7CE;
     color: white;
     font-size: 1rem;
+    font-family: 'Langar', cursive;
 }
 
 /* Lista użytkowników */
@@ -72,6 +73,7 @@ body {
     border-radius: 12px;
     cursor: pointer;
     transition: background-color 0.3s;
+    font-family: 'Langar', cursive;
 }
 
 .user:hover {
@@ -89,6 +91,7 @@ body {
     display: flex;
     flex-direction: column;
     color: white;
+    font-family: 'Langar', cursive;
 }
 
 /* Status użytkownika */
@@ -96,6 +99,7 @@ body {
     font-size: 0.85rem;
     color: #fff;
     margin-top: 5px;
+    font-family: 'Langar', cursive;
 }
 
 .status.online {
@@ -125,17 +129,20 @@ body {
     flex-direction: column;
     align-items: flex-start;
     color: white;
+    font-family: 'Langar', cursive;
 }
 
 .chat-header h2 {
     margin-bottom: 5px;
     display: flex;
     align-items: center;
+    font-family: 'Langar', cursive;
 }
 
 .chat-header .status {
     font-size: 0.9rem;
     color: #fff;
+    font-family: 'Langar', cursive;
 }
 
 /* Wiadomości */
@@ -144,11 +151,13 @@ body {
     padding: 20px;
     overflow-y: auto;
     background-color: #1a4d58;
+    font-family: 'Langar', cursive;
 }
 
 .message {
     display: flex;
     margin-bottom: 15px;
+    font-family: 'Langar', cursive;
 }
 
 .ikona-message {
@@ -171,11 +180,13 @@ body {
     max-width: 70%;
     word-wrap: break-word;
     margin-bottom: 5px;
+    font-family: 'Langar', cursive;
 }
 
 .message-time {
     font-size: 0.75rem;
     color: gray;
+    font-family: 'Langar', cursive;
 }
 
 /* Pole wprowadzania wiadomości */
@@ -185,6 +196,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    font-family: 'Langar', cursive;
 }
 
 .input-area input {
@@ -195,6 +207,7 @@ body {
     background-color: #01C7CE;
     color: white;
     font-size: 1rem;
+    font-family: 'Langar', cursive;
 }
 
 .input-area button {
@@ -205,6 +218,7 @@ body {
     border-radius: 5px;
     cursor: pointer;
     font-size: 1rem;
+    font-family: 'Langar', cursive;
 }
 
 .input-area button:hover {
@@ -217,4 +231,5 @@ div p {
     text-align: center; /* Wyśrodkowanie tekstu */
     margin: 0; /* Usunięcie domyślnego marginesu */
     margin-bottom: 10px; /* Dodanie odstępu między tekstem a następnymi elementami */
+    font-family: 'Langar', cursive;
 }
