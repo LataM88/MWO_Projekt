@@ -294,6 +294,42 @@ const mailOptions = {
 });
 
 // Endpoint to reset the password
+
+app.post('/reset-password', async (req, res) => {
+    const { email, resetCode, newPassword } = req.body;
+
+    // Weryfikowanie, czy kod resetu pasuje do zapisanego kodu w bazie
+    const { data, error } = await supabase
+        .from('users')
+        .select('resetCode, password')
+        .eq('email', email)
+        .single(); // Pobieramy tylko jeden rekord
+
+    if (error || !data) {
+        return res.status(400).json({ message: 'Użytkownik nie istnieje.' });
+    }
+
+    // Sprawdzanie, czy kod resetu się zgadza
+    if (data.resetCode !== resetCode) {
+        return res.status(400).json({ message: 'Nieprawidłowy kod resetu.' });
+    }
+
+    // Szyfrowanie nowego hasła
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Aktualizowanie hasła i usuwanie resetCode z bazy
+    const { error: updateError } = await supabase
+        .from('users')
+        .update({ password: hashedPassword, resetCode: null }) // Resetujemy kod po zmianie hasła
+        .eq('email', email);
+
+    if (updateError) {
+        return res.status(500).json({ message: 'Błąd aktualizacji hasła.' });
+    }
+
+    res.status(200).json({ message: 'Hasło zostało zmienione pomyślnie.' });
+});
+
 app.get('/activate', async (req, res) => {
     const { code, email } = req.query;
 
