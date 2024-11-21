@@ -10,25 +10,26 @@ const Login = (props) => {
     const [password, setPassword] = useState("");
     const [emailError, setEmailError] = useState("");
     const [passwordError, setPasswordError] = useState("");
-    const [rememberMe, setRememberMe] = useState(false);
+    const [verificationCode, setVerificationCode] = useState(""); // Add state for the 2FA code
+    const [verificationCodeError, setVerificationCodeError] = useState(""); // Add error state for the code
+    const [isTwoFactorRequired, setIsTwoFactorRequired] = useState(false); // Track if 2FA is required
     const navigate = useNavigate();
 
     const onButtonClick = () => {
         setEmailError("");
         setPasswordError("");
+        setVerificationCodeError(""); // Reset verification error
 
-        // Weryfikacja e-mail
         if (email === "") {
             setEmailError("Proszę wprowadź email");
             return;
         }
 
         if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
-            setEmailError("Wprowadź poprawny email");
+            setEmailError("Podaj poprawny email");
             return;
         }
 
-        // Weryfikacja hasła
         if (password === "") {
             setPasswordError("Wprowadź hasło");
             return;
@@ -59,14 +60,17 @@ const Login = (props) => {
             body: JSON.stringify({ email })
         })
         .then(response => response.json())
-        .then(data => callback(data?.userExists))
+        .then(data => {
+            callback(data?.userExists);
+        })
         .catch(error => {
-            console.error('Błąd podczas sprawdzania istnienia konta:', error);
+            console.error('Error checking account existence:', error);
             callback(false);
         });
     };
 
     const logIn = () => {
+        console.log("Wysyłanie żądania logowania:", { email, password });
         fetch("http://localhost:3080/auth", {
             method: "POST",
             headers: {
@@ -76,25 +80,60 @@ const Login = (props) => {
         })
         .then(response => response.json())
         .then(data => {
+            console.log("Odpowiedź serwera:", data);
             if (data.message === 'success') {
                 localStorage.setItem("user", JSON.stringify({
                     email,
                     token: data.token,
                     userId: data.userId // Zapisujemy userId
                 }));
-                props.setLoggedIn(true);
-                props.setEmail(email);
-                navigate("/");
+                // After successful login, trigger 2FA step if necessary
+                setIsTwoFactorRequired(true);
             } else if (data.message === 'Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.') {
-                window.alert('Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.');
-            } else {
-                window.alert("Błędny email lub hasło!");
+                              window.alert('Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.');
+                          } else {
+                              window.alert("Błędny email lub hasło!");
             }
         })
         .catch(error => {
             console.error('Błąd logowania:', error);
         });
     };
+
+    const verifyTwoFactorCode = () => {
+        setVerificationCodeError("");
+
+        if (verificationCode === "") {
+            setVerificationCodeError("Proszę wprowadź kod weryfikacyjny");
+            return;
+        }
+
+        // Call the verify-2fa endpoint
+        fetch("http://localhost:3080/verify-2fa", {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                userId: JSON.parse(localStorage.getItem("user")).userId,
+                twoFactorCode: verificationCode
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message === 'Weryfikacja pomyślna') {
+                props.setLoggedIn(true);
+                navigate("/"); // Redirect to homepage or desired page
+            } else {
+                setVerificationCodeError("Nieprawidłowy kod weryfikacyjny.");
+            }
+        })
+        .catch(error => {
+            console.error('Błąd weryfikacji 2FA:', error);
+        });
+    };
+
+    const [rememberMe, setRememberMe] = useState(false);
 
     return (
         <div className="mainContainerLogin">
@@ -146,6 +185,29 @@ const Login = (props) => {
                         value="Zaloguj"
                     />
                 </div>
+
+                {/* 2FA Step */}
+                {isTwoFactorRequired && (
+                    <div>
+                        <div className="inputContainerLogin">
+                            <input
+                                value={verificationCode}
+                                placeholder="Wprowadź kod weryfikacyjny"
+                                onChange={ev => setVerificationCode(ev.target.value)}
+                                className="inputBoxLogin"
+                            />
+                            <label className="errorLabelLogin">{verificationCodeError}</label>
+                        </div>
+                        <div className="inputContainerLogin">
+                            <input
+                                className="inputButtonLogin1"
+                                type="button"
+                                onClick={verifyTwoFactorCode}
+                                value="Zweryfikuj kod"
+                            />
+                        </div>
+                    </div>
+                )}
                 <br />
                 <div className="inputContainerLogin">
                     <p>
