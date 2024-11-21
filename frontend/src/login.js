@@ -89,8 +89,10 @@ const Login = (props) => {
                 }));
                 // After successful login, trigger 2FA step if necessary
                 setIsTwoFactorRequired(true);
-            } else {
-                window.alert("Błędny email lub hasło!");
+            } else if (data.message === 'Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.') {
+                              window.alert('Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.');
+                          } else {
+                              window.alert("Błędny email lub hasło!");
             }
         })
         .catch(error => {

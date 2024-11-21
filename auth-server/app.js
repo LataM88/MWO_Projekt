@@ -1,5 +1,6 @@
 import express from 'express';
 import nodemailer from 'nodemailer';
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
@@ -37,16 +38,46 @@ app.post('/register', async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Generowanie unikalnego kodu aktywacyjnego
+        const activationCode = crypto.randomBytes(16).toString('hex');
+
         const { data, error } = await supabase
             .from('users')
-            .insert([{ email, password: hashedPassword, isActive: true }]);
+            .insert([{ email, password: hashedPassword, isActive: false, activationCode }]);
 
         if (error) {
             console.error('Error inserting user:', error);
             return res.status(500).json({ message: 'Błąd rejestracji' });
         }
 
-        res.status(200).json({ message: 'success' });
+        // Wysyłanie linku aktywacyjnego
+        const activationLink = `http://localhost:3080/activate?code=${activationCode}&email=${email}`;
+
+        const mailOptions = {
+            from: '"ProjektMWO2024" <projekt.mwo24@gmail.com>', // Nadawca
+            to: email, // Odbiorca
+            subject: 'Link aktywacyjny',
+            html: `
+                <div style="width: 100%; background-color: rgba(21, 72, 75, 1); padding: 20px; font-family: 'Langar', sans-serif; box-sizing: border-box;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); text-align: center;">
+                        <h1 style="font-size: 24px; color: rgba(21, 72, 75, 1); margin-bottom: 20px;">Link aktywacyjny</h1>
+                        <p style="font-size: 16px; color: black; margin-bottom: 30px;">Twój link weryfikacyjny:</p>
+                        <a href="${activationLink}" style="font-size: 20px; font-weight: bold; background-color: rgba(21, 72, 75, 1); color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; display: inline-block; margin-bottom: 30px;">
+                            Kliknij tutaj, aby aktywować
+                        </a>
+                    </div>
+                </div>
+            `
+        };
+
+        transporter.sendMail(mailOptions, (err) => {
+            if (err) {
+                console.error("Error sending email:", err);
+                return res.status(500).json({ message: 'Błąd wysyłania e-maila.' });
+            }
+            res.status(200).json({ message: "success" });
+        });
     } catch (err) {
         console.error('Unhandled error:', err);
         res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
@@ -72,9 +103,13 @@ app.post('/auth', async (req, res) => {
         return res.status(400).json({ message: 'Użytkownik nie istnieje.' });
     }
 
+    if (!user.isActive) {
+        return res.status(403).json({ message: 'Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.' });
+    }
+
     const result = await bcrypt.compare(password, user.password);
     if (!result) {
-        return res.status(401).json({ message: 'Błędne hasło' });
+        return res.status(401).json({ message: 'Nieprawidłowe hasło.' });
     } else {
         // Generowanie kodu 2FA
         const twoFactorCode = generateTwoFactorCode();
@@ -205,7 +240,6 @@ const transporter = nodemailer.createTransport({
 });
 
 // Endpoint to send password reset link
-// Endpoint to send password reset link
 app.post('/forgot-password', async (req, res) => {
     const { email } = req.body;  // Pobieramy e-mail użytkownika z zapytania
 
@@ -259,43 +293,51 @@ const mailOptions = {
     });
 });
 
-
 // Endpoint to reset the password
-app.post('/reset-password', async (req, res) => {
-    const { email, resetCode, newPassword } = req.body;
+app.get('/activate', async (req, res) => {
+    const { code, email } = req.query;
 
-    // Weryfikowanie, czy kod resetu pasuje do zapisanego kodu w bazie
-    const { data, error } = await supabase
-        .from('users')
-        .select('resetCode, password')
-        .eq('email', email)
-        .single(); // Pobieramy tylko jeden rekord
-
-    if (error || !data) {
-        return res.status(400).json({ message: 'Użytkownik nie istnieje.' });
+    if (!code || !email) {
+        return res.status(400).json({ message: 'Brak kodu aktywacyjnego lub adresu e-mail.' });
     }
 
-    // Sprawdzanie, czy kod resetu się zgadza
-    if (data.resetCode !== resetCode) {
-        return res.status(400).json({ message: 'Nieprawidłowy kod resetu.' });
+    try {
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('activationCode, isActive')
+            .eq('email', email)
+            .single();
+
+        if (error || !user) {
+            return res.status(404).json({ message: 'Użytkownik nie istnieje.' });
+        }
+
+        if (user.isActive) {
+            return res.status(400).json({ message: 'Konto jest już aktywne.' });
+        }
+
+        if (user.activationCode !== code) {
+            return res.status(400).json({ message: 'Nieprawidłowy kod aktywacyjny.' });
+        }
+
+        // Aktywacja konta
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ isActive: true, activationCode: null })
+            .eq('email', email);
+
+        if (updateError) {
+            return res.status(500).json({ message: 'Błąd aktywacji konta.' });
+        }
+
+        // Przekierowanie na frontend
+        res.redirect(`http://localhost:3000/activate?status=success&email=${email}`);
+    } catch (err) {
+        console.error('Unhandled error:', err);
+        res.status(500).json({ message: 'Wewnętrzny błąd serwera.' });
     }
-
-    // Szyfrowanie nowego hasła
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // Aktualizowanie hasła i usuwanie resetCode z bazy
-    const { error: updateError } = await supabase
-        .from('users')
-        .update({ password: hashedPassword, resetCode: null }) // Resetujemy kod po zmianie hasła
-        .eq('email', email);
-
-    if (updateError) {
-        return res.status(500).json({ message: 'Błąd aktualizacji hasła.' });
-    }
-
-    res.status(200).json({ message: 'Hasło zostało zmienione pomyślnie.' });
 });
-//lista użytkowników
+
 app.get('/users', async (req, res) => {
     const { data, error } = await supabase
         .from('users')
@@ -311,7 +353,7 @@ app.get('/users', async (req, res) => {
 //informacje o użytkowniku
 app.get('/user/:id', async (req, res) => {
     const { id } = req.params; // Pobranie ID z parametru ścieżki
-    console.log(`Fetching user with ID: ${id}`);
+
 
     try {
         // Zapytanie do Supabase po użytkownika z określonym ID
@@ -367,7 +409,7 @@ app.put('/user/:id', async (req, res) => {
     }
 });
 
-// Start server
+// Starting server
 app.listen(3080, () => {
-    console.log('Server is running on port 3080');
+    console.log('Server started on port 3080');
 });
