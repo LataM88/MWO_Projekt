@@ -1,5 +1,6 @@
 import express from 'express';
 import nodemailer from 'nodemailer';
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
@@ -37,22 +38,44 @@ app.post('/register', async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Generowanie unikalnego kodu aktywacyjnego
+        const activationCode = crypto.randomBytes(16).toString('hex');
+
         const { data, error } = await supabase
             .from('users')
-            .insert([{ email, password: hashedPassword, isActive: true }]);
+            .insert([{ email, password: hashedPassword, isActive: false, activationCode }]);
 
         if (error) {
             console.error('Error inserting user:', error);
             return res.status(500).json({ message: 'Błąd rejestracji' });
         }
 
-        res.status(200).json({ message: 'success' });
+        // Wysyłanie linku aktywacyjnego
+        const activationLink = `http://localhost:3080/activate?code=${activationCode}&email=${email}`;
+
+
+        const mailOptions = {
+            from: 'projekt.mwo24@gmail.com',
+            to: email,
+            subject: 'Aktywacja konta',
+            text: `Kliknij w poniższy link, aby aktywować swoje konto: ${activationLink}`,
+        };
+
+        transporter.sendMail(mailOptions, (err) => {
+            if (err) {
+                console.error("Error sending email:", err);
+                return res.status(500).json({ message: 'Błąd wysyłania e-maila.' });
+            }
+            res.status(200).json({ message: "success" });
+        });
     } catch (err) {
         console.error('Unhandled error:', err);
         res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
     }
 });
 
+// Authorization endpoint
 // Authorization endpoint
 app.post('/auth', async (req, res) => {
     const { email, password } = req.body;
@@ -67,8 +90,13 @@ app.post('/auth', async (req, res) => {
         return res.status(400).json({ message: 'Użytkownik nie istnieje.' });
     }
 
+    if (!user.isActive) {
+        return res.status(403).json({ message: 'Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.' });
+    }
+
     const result = await bcrypt.compare(password, user.password);
     if (!result) {
+
         return res.status(401).json({ message: 'Błędne hasło' });
     } else {
         const loginData = { email, signInTime: Date.now() };
@@ -80,8 +108,16 @@ app.post('/auth', async (req, res) => {
             token,
             userId: user.id // Zwracamy userId
         });
+
+        return res.status(401).json({ message: 'Nieprawidłowe hasło.' });
+
     }
+
+    const loginData = { email, signInTime: Date.now() };
+    const token = jwt.sign(loginData, jwtSecretKey);
+    res.status(200).json({ message: 'success', token });
 });
+
 
 // Check if account exists endpoint
 app.post('/check-account', async (req, res) => {
@@ -223,6 +259,7 @@ app.get('/users', async (req, res) => {
         .from('users')
         .select('id, email, isActive, opis');
 
+
     if (error) {
         console.error('Error fetching users:', error);
         return res.status(500).json({ message: 'Błąd serwera' });
@@ -288,6 +325,57 @@ app.put('/user/:id', async (req, res) => {
         res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
     }
 });
+
+//endpoint aktywacja rejestracji
+app.get('/activate', async (req, res) => {
+    const { code, email } = req.query;
+
+    if (!code || !email) {
+        return res.status(400).json({ message: 'Brak kodu aktywacyjnego lub adresu e-mail.' });
+    }
+
+    try {
+        // Pobierz użytkownika na podstawie email
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('activationCode, isActive')
+            .eq('email', email)
+            .single();
+
+        if (error || !user) {
+            return res.status(404).json({ message: 'Użytkownik nie istnieje.' });
+        }
+
+        // Sprawdź, czy konto jest już aktywne
+        if (user.isActive) {
+            return res.status(400).json({ message: 'Konto jest już aktywne.' });
+        }
+
+        // Sprawdź, czy kod aktywacyjny jest poprawny
+        if (user.activationCode !== code) {
+            return res.status(400).json({ message: 'Nieprawidłowy kod aktywacyjny.' });
+        }
+
+        // Zaktualizuj konto użytkownika
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ isActive: true, activationCode: null }) // Usuwamy kod aktywacyjny
+            .eq('email', email);
+
+        if (updateError) {
+            console.error('Error during account activation:', updateError);
+            return res.status(500).json({ message: 'Błąd aktywacji konta.' });
+        }
+
+        // Zamiast zwracać JSON, przekierowujemy do strony frontendowej
+        res.redirect(`http://localhost:3000/activate?status=success&email=${email}`);
+    } catch (err) {
+        console.error('Unhandled error:', err);
+        res.status(500).json({ message: 'Wewnętrzny błąd serwera.' });
+    }
+});
+
+
 
 // Start server
 app.listen(3080, () => {
