@@ -74,7 +74,7 @@ function Chat() {
                             className="user"
                             onClick={() => setActiveUser(user)}
                         >
-                            <img src={user.image || 'default-avatar.jpg'} alt={user.email} className="user-image" />
+                            <img src={user.image} alt={user.email} className="user-image" />
                             <div className="user-info">
                                 <span>{user.email}</span>
                                 <span className={`status ${user.status}`}>{user.status === 'online' ? 'Dostępny' : 'Niedostępny'}</span>
@@ -90,7 +90,7 @@ function Chat() {
                     <>
                         <div className="chat-header">
                             <h2>
-                                <img src={activeUser.image || 'default-avatar.jpg'} alt={activeUser.email} className="ikona-small-header" />
+                                <img src={activeUser.image} alt={activeUser.email} className="user-image-onscreen" />
                                 Czatujesz z {activeUser.email}
                             </h2>
                             <span className="status">{activeUser.status === 'online' ? 'Dostępny' : 'Niedostępny'}</span>

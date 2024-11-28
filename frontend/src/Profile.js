@@ -76,7 +76,7 @@ function Profile() {
         <div className="mainprofile">
             <div className="profile-header">
                 <img
-                    src={user.photo || "https://placehold.jp/005f63/ffffff/120x120.png"}
+                    src={user.image}
                     alt="Zdjęcie profilowe"
                     className="profile-image"
                 />
