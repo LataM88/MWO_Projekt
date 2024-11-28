@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import {Link, useNavigate} from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import "./Register.css";
 import './css/fontello.css'
@@ -9,12 +9,16 @@ const Register = () => {
     const [password, setPassword] = useState("");
     const [emailError, setEmailError] = useState("");
     const [passwordError, setPasswordError] = useState("");
+    const [successMessage, setSuccessMessageRegister] = useState("");  // Nowy stan dla komunikatu o sukcesie
+    const [errorMessage, setErrorMessageRegister] = useState("");      // Nowy stan dla komunikatu o błędzie
 
     const navigate = useNavigate();
 
     const onButtonClick = () => {
         setEmailError("");
         setPasswordError("");
+        setSuccessMessageRegister("");  // Czyszczenie komunikatu o sukcesie przed próbą rejestracji
+        setErrorMessageRegister("");    // Czyszczenie komunikatu o błędzie przed próbą rejestracji
 
         // Walidacja danych wejściowych
         if ("" === email) {
@@ -48,17 +52,18 @@ const Register = () => {
         .then(response => response.json())
         .then(data => {
             if (data.message === "success") {
-                alert("Rejestracja zakończona sukcesem! Sprawdź swoją skrzynkę e-mail, aby aktywować konto.");
-                navigate("/login");
+                setSuccessMessageRegister("Email aktywacyjny wysłany na maila, będzie aktywny przez tydzień. Za 15 sekund przekierujemy Cię na strone logowania, lub kliknij w link");
+                setTimeout(() => {
+                    navigate("/login");
+                }, 15000);  // Przekierowanie po 15 sekundach
             } else {
-                alert("Wystąpił błąd: " + data.message);
+                setErrorMessageRegister("Wystąpił błąd: " + data.message);
             }
         })
         .catch(error => {
-            alert("Wystąpił błąd podczas rejestracji: " + error.message);
+            setErrorMessageRegister("Wystąpił błąd podczas rejestracji: " + error.message);
         });
     };
-
 
     return (
         <div className="mainContainerRegister">
@@ -67,9 +72,9 @@ const Register = () => {
                     <div>Rejestracja</div>
                 </div>
                 <div className={"welcomeContainerRegister"}>
-                    <div>Cześć, <br/>Witamy po raz pierwszy!</div>
+                    <div>Cześć, <br />Witamy po raz pierwszy!</div>
                 </div>
-                <br/>
+                <br />
                 <div className="inputContainerRegister">
                     <input
                         value={email}
@@ -79,7 +84,7 @@ const Register = () => {
                     />
                     <label className="errorLabelRejestracja">{emailError}</label>
                 </div>
-                <br/>
+                <br />
                 <div className="inputContainerRegister">
                     <input
                         type="password"
@@ -90,7 +95,7 @@ const Register = () => {
                     />
                     <label className="errorLabelRejestracja">{passwordError}</label>
                 </div>
-                <br/>
+                <br />
                 <div className="inputContainerRegister">
                     <input
                         className="inputButtonRegister"
@@ -99,9 +104,22 @@ const Register = () => {
                         value="Zarejestruj się"
                     />
                 </div>
+                {successMessage && (
+                    <div className="successMessageRegister">
+                        {successMessage}
+                        <div>
+                        <Link to = "/login">Przejdź do logowania</Link>
+                        </div>
+                    </div>
+                )}
+                {errorMessage && (
+                    <div className="errorMessageRegister">
+                        {errorMessage}
+                    </div>
+                )}
                 <div className={"inputContainerRegister"}>
                     <p>
-                        Posiadasz już konto? <Link to="/login">Zaloguj się!</Link> {/* Link do rejestracji */}
+                        Posiadasz już konto? <Link to="/login">Zaloguj się!</Link>
                     </p>
                 </div>
                 <div className="icon-container">
