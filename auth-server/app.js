@@ -41,10 +41,12 @@ app.post('/register', async (req, res) => {
 
         // Generowanie unikalnego kodu aktywacyjnego
         const activationCode = crypto.randomBytes(16).toString('hex');
+        const activationExpires = new Date();
+        activationExpires.setDate(activationExpires.getDate() + 7);
 
         const { data, error } = await supabase
             .from('users')
-            .insert([{ email, password: hashedPassword, isActive: false, activationCode }]);
+            .insert([{ email, password: hashedPassword, isActive: false, activationCode, activationExpires }]);
 
         if (error) {
             console.error('Error inserting user:', error);
@@ -356,10 +358,16 @@ app.get('/activate', async (req, res) => {
             return res.status(400).json({ message: 'Nieprawidłowy kod aktywacyjny.' });
         }
 
+        // Sprawdzenie daty wygaśnięcia
+        const now = new Date();
+        if (new Date(user.activationExpires) < now) {
+            return res.status(400).json({ message: 'Link aktywacyjny wygasł.' });
+        }
+
         // Aktywacja konta
         const { error: updateError } = await supabase
             .from('users')
-            .update({ isActive: true, activationCode: null })
+            .update({ isActive: true, activationCode: null, activationExpires: null })
             .eq('email', email);
 
         if (updateError) {
