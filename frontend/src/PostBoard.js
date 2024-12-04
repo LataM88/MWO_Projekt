@@ -4,19 +4,33 @@ import './PostBoard.css';
 const PostBoard = () => {
     const [posts, setPosts] = useState([]);
     const [content, setContent] = useState('');
-    const [userEmail, setUserEmail] = useState('user@example.com');
+    const [userEmail, setUserEmail] = useState('');
     const [userIcon, setUserIcon] = useState('default-avatar.jpg');
-    const [userId, setUserId] = useState(1);
+    const [userId, setUserId] = useState(null); // Identyfikator użytkownika
 
-    const API_URL = 'http://localhost:3080/api/posts'; // Ustaw odpowiedni adres API
+    const API_URL = 'http://localhost:3080/api/posts'; // Adres API do pobierania i dodawania postów
 
-    // Pobieranie danych użytkownika (możesz zaimplementować to na podstawie logowania)
+    // Pobiera dane użytkownika z localStorage
     const fetchUserData = () => {
-        setUserEmail('user@example.com');
-        setUserIcon('default-avatar.jpg');
-        setUserId(1); // Zastąp rzeczywistym ID użytkownika
+        const userData = localStorage.getItem('user'); // Klucz "user" zawiera dane użytkownika
+
+        if (userData) {
+            try {
+                const parsedUserData = JSON.parse(userData);
+
+                // Założenie: obiekt zawiera email, userId i userIcon
+                setUserEmail(parsedUserData.email || 'default@example.com');
+                setUserId(parsedUserData.userId || 1);
+                setUserIcon(parsedUserData.userIcon || 'default-avatar.jpg');
+            } catch (error) {
+                console.error('Błąd parsowania danych użytkownika z localStorage:', error);
+            }
+        } else {
+            console.log('Brak danych użytkownika w localStorage');
+        }
     };
 
+    // Obsługuje wysyłanie nowego posta
     const handlePostSubmit = async (event) => {
         event.preventDefault();
 
@@ -27,7 +41,7 @@ const PostBoard = () => {
 
         const newPost = {
             users_id: userId, // Identyfikator użytkownika
-            content,
+            content,          // Treść posta
         };
 
         try {
@@ -41,40 +55,38 @@ const PostBoard = () => {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error('Błąd zapisu:', errorData); // Zapisujemy szczegóły błędu w konsoli
                 alert(`Błąd zapisu: ${errorData.error}`);
                 return;
             }
 
             const savedPost = await response.json();
-            console.log('Zapisany post:', savedPost); // Logujemy zapisany post w konsoli
 
-            setPosts([
-                {
-                    ...savedPost[0], // Oczekujemy, że zapisany post będzie dostępny w odpowiedzi
+            setPosts([{
+                ...savedPost,
+                user: {
                     email: userEmail,
-                    icon: userIcon,
+                    image: userIcon,
+                    imie: savedPost.user?.imie || 'Nieznane imię',
+                    nazwisko: savedPost.user?.nazwisko || 'Nieznane nazwisko',
                 },
-                ...posts,
-            ]);
+            }, ...posts]);
 
-            setContent(''); // Resetujemy treść posta
+            setContent(''); // Resetowanie pola tekstowego
         } catch (error) {
             console.error('Błąd wysyłania żądania:', error);
             alert('Nie udało się zapisać posta.');
         }
     };
 
+    // Pobiera wszystkie posty z API
     const fetchPosts = async () => {
         try {
             const response = await fetch(API_URL);
             if (response.ok) {
                 const data = await response.json();
-                setPosts(data.map(post => ({
-                    ...post,
-                    email: userEmail,
-                    icon: userIcon,
-                })));
+                console.log("Otrzymane dane postów:", data); // Sprawdź dane w konsoli
+
+                setPosts(data); // Zapisz dane postów w stanie
             } else {
                 console.error('Błąd pobierania postów:', response.statusText);
             }
@@ -83,10 +95,12 @@ const PostBoard = () => {
         }
     };
 
+
+
     useEffect(() => {
-        fetchUserData();
-        fetchPosts();
-    }, []);
+        fetchUserData(); // Pobiera dane użytkownika
+        fetchPosts();    // Pobiera posty z API
+    }, []); // Wykonuje się raz przy renderowaniu komponentu
 
     return (
         <div className="postboard-container-unique">
@@ -110,14 +124,26 @@ const PostBoard = () => {
                     <p className="black-text3">Brak postów na tablicy!</p>
                 ) : (
                     <ul className="postboard-posts-list">
-                        {posts.map((post) => (
-                            <li key={post.id} className="postboard-post-item">
+                        {posts.map((post, index) => (
+                            <li key={post.id || index} className="postboard-post-item">
                                 <div className="post-header">
-                                    <img src={post.icon || 'default-avatar.jpg'} alt="Ikona użytkownika" className="user-icon" />
-                                    <span className="post-user-email">{post.email}</span>
+                                    <img
+                                        src={post.user?.image || 'default-avatar.jpg'}
+                                        alt="Ikona użytkownika"
+                                        className="user-icon"
+                                    />
+                                    <div className="user-info">
+                    <span className="post-user-name">
+                        {post.user?.imie || 'Nieznane imię'} {post.user?.nazwisko || 'Nieznane nazwisko'}
+                    </span>
+                                        <span
+                                            className="post-user-email">({post.user?.email || 'Nieznany email'})</span>
+                                    </div>
                                 </div>
                                 <p className="black-text2">{post.content}</p>
-                                <small className="postboard-post-date">{new Date(post.created_at).toLocaleString()}</small>
+                                <small className="postboard-post-date">
+                                    {new Date(post.created_at).toLocaleString()}
+                                </small>
                             </li>
                         ))}
                     </ul>
