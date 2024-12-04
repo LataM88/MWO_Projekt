@@ -4,9 +4,11 @@
   "private": true,
   "dependencies": {
     "@clerk/clerk-react": "^4.11.4",
+    "@supabase/supabase-js": "^2.46.2",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.7.8",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "express": "^4.21.1",
