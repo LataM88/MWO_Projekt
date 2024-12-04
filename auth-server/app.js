@@ -187,7 +187,8 @@ app.post('/verify-2fa', async (req, res) => {
     }
 
     // Generowanie tokenu JWT
-    const loginData = { userId, signInTime: Date.now() };
+    //date now milisekundy, potrzebuje sekund na weryfikację tokenu stąd /1000
+    const loginData = { userId, exp: Date.now()/1000 + 1800 };
     const token = jwt.sign(loginData, jwtSecretKey);
 
     res.status(200).json({ message: 'Weryfikacja pomyślna', token });
@@ -522,6 +523,53 @@ app.post('/upload-profile-image/:userId', upload.single('image'), async (req, re
         console.error('Błąd podczas przetwarzania obrazu:', err);
         res.status(500).json({ message: 'Błąd serwera.' });
     }
+});
+
+//weryfikacja tokenu
+app.post('/verify', (req, res) => {
+    const token = req.headers['jwt-token']; // Odczytujemy token z nagłówka
+
+    if (!token) {
+        return res.status(401).json({ message: 'Brak tokenu' });
+    }
+
+    // Sprawdzanie tokenu
+    jwt.verify(token, jwtSecretKey, (err, decoded) => {
+        if (err) {
+            return res.status(401).json({ message: 'Nieprawidłowy lub wygasły token' });
+        }
+
+        // Token jest ważny, zwracamy informacje
+        console.log('Token zweryfikowany, decoded:', decoded); // Opcjonalne logowanie danych tokenu
+        res.status(200).json({ message: 'success', userId: decoded.userId });
+    });
+});
+// Funkcja do tworzenia nowego tokenu
+const createNewToken = (userId, email) => {
+    const expTimeInSeconds = Math.floor(Date.now() / 1000) + 30 * 60;  // Dodanie 30 minut
+    const payload = { userId, email, exp: expTimeInSeconds };
+    const token = jwt.sign(payload, jwtSecretKey);
+    return token;
+};
+
+// Endpoint do przedłużenia sesji
+app.post('/refresh-token', (req, res) => {
+    const token = req.headers['jwt-token'];  // Odczytanie tokenu z nagłówka
+
+    if (!token) {
+        return res.status(401).json({ message: 'Brak tokenu' });
+    }
+
+    jwt.verify(token, jwtSecretKey, (err, decoded) => {
+        if (err) {
+            return res.status(401).json({ message: 'Nieprawidłowy token' });
+        }
+
+        // Token jest ważny, przedłużamy sesję i generujemy nowy token
+        const newToken = createNewToken(decoded.userId, decoded.email);
+        res.status(200).json({ message: 'Token przedłużony', token: newToken });
+        console.log('To log z odnawiania tokenu')
+    });
 });
 
 // Starting server
