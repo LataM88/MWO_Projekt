@@ -30,7 +30,7 @@ app.get('/', (_req, res) => {
 
 // Registration endpoint
 app.post('/register', async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, imie, nazwisko } = req.body;
 
     try {
         const { data: existingUser, error: userError } = await supabase
@@ -51,7 +51,7 @@ app.post('/register', async (req, res) => {
 
         const { data, error } = await supabase
             .from('users')
-            .insert([{ email, password: hashedPassword, isActive: false, activationCode, activationExpires }]);
+            .insert([{ imie, nazwisko, email, password: hashedPassword, isActive: false, activationCode, activationExpires }]);
 
         if (error) {
             console.error('Error inserting user:', error);
@@ -390,7 +390,7 @@ app.get('/activate', async (req, res) => {
 app.get('/users', async (req, res) => {
     const { data, error } = await supabase
         .from('users')
-        .select('id, email, isActive, opis');
+        .select('id, imie, nazwisko, isActive, opis');
 
     if (error) {
         console.error('Error fetching users:', error);
