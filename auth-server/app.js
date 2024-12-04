@@ -5,6 +5,11 @@ import bcrypt from 'bcrypt';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import { createClient } from '@supabase/supabase-js';
+//Profilowe
+import multer from 'multer';
+
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Konfiguracja Supabase
 const supabaseUrl = 'https://qgjrvrjgmewqffywfxhh.supabase.co';
@@ -452,6 +457,73 @@ app.put('/user/:id', async (req, res) => {
         res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
     }
 });
+
+// Aktualizacja zdjęcia profilowego
+app.post('/upload-profile-image/:userId', upload.single('image'), async (req, res) => {
+    const { userId } = req.params;
+    const file = req.file;
+
+    if (!file) {
+        return res.status(400).json({ message: 'Plik nie został przesłany.' });
+    }
+
+    const fileExtension = file.originalname.split('.').pop();
+    const fileName = `${userId}.${fileExtension}`;
+
+    try {
+        // Check if file exists
+        const { data: existingFile, error: checkError } = await supabase
+            .storage
+            .from('profile-image')
+            .list('', { search: fileName });
+
+        if (checkError) {
+            console.error('Error checking existing file in Supabase:', checkError);
+            return res.status(500).json({ message: 'Error checking file existence in Supabase.' });
+        }
+
+        // If file exists, delete it
+        if (existingFile.length > 0) {
+            const { error: deleteError } = await supabase
+                .storage
+                .from('profile-image')
+                .remove([fileName]);
+
+            if (deleteError) {
+                console.error('Error deleting existing file in Supabase:', deleteError);
+                return res.status(500).json({ message: 'Error deleting existing file in Supabase.' });
+            }
+        }
+
+        // Upload new file
+        const { data, error } = await supabase.storage
+            .from('profile-image')
+            .upload(fileName, file.buffer, { contentType: file.mimetype });
+
+        if (error) {
+            console.error('Error uploading image to Supabase:', error);
+            return res.status(500).json({ message: 'Błąd przesyłania obrazu do Supabase.' });
+        }
+
+        const imageUrl = `${supabaseUrl}/storage/v1/object/public/profile-image/${fileName}?${new Date().getTime()}`
+
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ image: imageUrl })
+            .eq('id', userId);
+
+        if (updateError) {
+            console.error('Error updating user profile image:', updateError);
+            return res.status(500).json({ message: 'Błąd aktualizacji profilu użytkownika.' });
+        }
+
+        res.status(200).json({ imageUrl });
+    } catch (err) {
+        console.error('Błąd podczas przetwarzania obrazu:', err);
+        res.status(500).json({ message: 'Błąd serwera.' });
+    }
+});
+
 // Starting server
 app.listen(3080, () => {
     console.log('Server started on port 3080');
