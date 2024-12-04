@@ -9,6 +9,7 @@ import Profile from './Profile';
 import Chat from './chat';
 import ForgotPassword from './zapomnialesHasla';
 import Activate from './activate';
+import PostBoard from './PostBoard';
 
 import './App.css';
 
@@ -57,6 +58,7 @@ function App() {
                     <Route path="/register" element={<Register />} />
                     <Route path="/zapomnialesHasla" element={<ForgotPassword />} />
                     <Route path="/chat" element={<Chat />} />
+                    <Route path="/postboard" element={<PostBoard />} />
                 </Routes>
             </BrowserRouter>
         </div>

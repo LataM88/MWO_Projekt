@@ -44,6 +44,7 @@ app.post('/register', async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
+
         // Generowanie unikalnego kodu aktywacyjnego
         const activationCode = crypto.randomBytes(16).toString('hex');
         const activationExpires = new Date();
@@ -57,6 +58,7 @@ app.post('/register', async (req, res) => {
             console.error('Error inserting user:', error);
             return res.status(500).json({ message: 'Błąd rejestracji' });
         }
+
 
         // Wysyłanie linku aktywacyjnego
         const activationLink = `http://localhost:3080/activate?code=${activationCode}&email=${email}`;
@@ -243,6 +245,63 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: 'projekt.mwo24@gmail.com',
         pass: 'dokr ytzb odhi ytgs'
+    }
+});
+    // Obsługa tablicy postów
+
+app.post('/api/posts', express.json(), async (req, res) => {
+    const { users_id, content } = req.body;
+
+    // Walidacja wymaganych pól
+    if (!users_id || !content) {
+        console.log('Brak wymaganych pól:', { users_id, content });
+        return res.status(400).json({ error: 'Brakuje wymaganych pól: users_id, content' });
+    }
+
+    // Dodatkowa walidacja
+    if (typeof users_id !== 'number') {
+        return res.status(400).json({ error: 'Pole users_id musi być liczbą' });
+    }
+
+    if (typeof content !== 'string' || content.trim() === '') {
+        return res.status(400).json({ error: 'Pole content nie może być puste' });
+    }
+
+    try {
+        // Sprawdzenie, czy użytkownik istnieje
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', users_id)
+            .single(); // Pobieramy jeden rekord użytkownika
+
+        if (userError || !user) {
+            console.log('Nie znaleziono użytkownika:', userError || 'Brak użytkownika');
+            return res.status(404).json({ error: 'Nie znaleziono użytkownika' });
+        }
+
+        // Wstawienie posta do bazy danych
+        const { data, error } = await supabase
+            .from('posts')
+            .insert([
+                {
+                    users_id: users_id,  // Identyfikator użytkownika
+                    content: content,     // Treść posta
+                    created_at: new Date(), // Data utworzenia (możesz pominąć, jeśli pole w bazie jest auto-generowane)
+                },
+            ])
+            .single(); // Pobieramy tylko jeden post (powinno być tylko jeden post)
+
+        if (error) {
+            console.log('Błąd zapisu do bazy:', error);
+            return res.status(500).json({ error: 'Błąd zapisu posta do bazy danych' });
+        }
+
+        // Zwrócenie danych o nowym poście
+        res.status(201).json(data); // Zwracamy dane o nowym poście
+    } catch (error) {
+        console.log('Błąd serwera:', error);
+        res.status(500).json({ error: 'Wewnętrzny błąd serwera' });
     }
 });
 
