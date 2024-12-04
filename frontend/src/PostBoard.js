@@ -136,8 +136,7 @@ const PostBoard = () => {
                     <span className="post-user-name">
                         {post.user?.imie || 'Nieznane imię'} {post.user?.nazwisko || 'Nieznane nazwisko'}
                     </span>
-                                        <span
-                                            className="post-user-email">({post.user?.email || 'Nieznany email'})</span>
+
                                     </div>
                                 </div>
                                 <p className="black-text2">{post.content}</p>
