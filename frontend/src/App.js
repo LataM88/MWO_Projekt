@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
 import Home from './home';
@@ -14,6 +14,7 @@ import GuestRoute from './components/GuestRoute';
 
 import './App.css';
 
+// Function to get remaining time from the token
 const getRemainingTime = (token) => {
     try {
         const decodedToken = JSON.parse(atob(token.split('.')[1]));
@@ -25,13 +26,14 @@ const getRemainingTime = (token) => {
     }
 };
 
+// Function to extend session if needed
 const extendSession = () => {
     const user = JSON.parse(localStorage.getItem('user'));
     if (user && user.token) {
         const remainingTime = getRemainingTime(user.token);
-
-        // Odnów sesję tylko, jeśli pozostało 15 minut lub mniej
-        if (remainingTime <= -1) {
+        if (remainingTime <= 0) {
+            localStorage.removeItem('user');
+        } else if (remainingTime <= 900) {
             fetch('http://localhost:3080/refresh-token', {
                 method: 'POST',
                 headers: {
@@ -42,11 +44,12 @@ const extendSession = () => {
                 .then((response) => response.json())
                 .then((data) => {
                     if (data.token) {
-                        // Zapisz nowy token w localStorage
+                        // Save new token in localStorage
                         localStorage.setItem('user', JSON.stringify({ ...user, token: data.token }));
                     }
                 })
                 .catch((error) => console.error('Błąd przy przedłużaniu sesji:', error));
+            console.log('NOWY TOKEN');
         }
     }
 };
@@ -54,25 +57,28 @@ const extendSession = () => {
 function AppContent() {
     const [loggedIn, setLoggedIn] = useState(false);
     const [email, setEmail] = useState("");
-    const [active, setActive] = useState(false);
-    const navigate = useNavigate(); // Użycie hooka navigate w komponencie, który jest w Routerze
-
-    const extendSessionOnActivity = () => {
-        setActive(true);
-        extendSession();  // Wywołanie funkcji przedłużającej sesję
-    };
+    const [loading, setLoading] = useState(true); // Loading state
+    const location = useLocation();
+    const navigate = useNavigate();
 
     useEffect(() => {
-        console.log("useEffect uruchomiony");  // Dodaj ten log
+        // Save current path to localStorage
+        if (loggedIn) {
+            localStorage.setItem('lastPath', location.pathname);
+        }
+    }, [location, loggedIn]);
+
+    useEffect(() => {
         const user = JSON.parse(localStorage.getItem("user"));
 
         if (!user || !user.token) {
             console.log("Brak tokenu w localStorage");
             setLoggedIn(false);
+            setLoading(false); // Stop loading if no token found
             return;
         }
 
-        console.log("Token znaleziony:", user.token);  // Dodaj ten log
+        console.log("Token znaleziony:", user.token);
 
         fetch("http://localhost:3080/verify", {
             method: "POST",
@@ -83,27 +89,44 @@ function AppContent() {
         })
             .then(response => response.json())
             .then(data => {
-                console.log("Odpowiedź z serwera:", data);  // Dodaj ten log
+                console.log("Odpowiedź z serwera:", data);
                 if (data.message === 'success') {
                     setLoggedIn(true);
                     setEmail(user.email || "");
+
+                    // After successful login, navigate to the last path
+                    const lastPath = localStorage.getItem('lastPath') || '/';
+                    navigate(lastPath);
+
+                    // Now that the user is logged in, extend the session
+                    extendSession();
                 } else {
                     setLoggedIn(false);
-                    navigate("/login"); // Przekierowanie na stronę logowania, jeśli token jest nieważny
+                    navigate("/login");
                 }
             })
             .catch(error => {
                 console.error('Błąd weryfikacji tokenu:', error);
                 setLoggedIn(false);
-                navigate("/login"); // Przekierowanie w przypadku błędu
+                navigate("/login");
+            })
+            .finally(() => {
+                setLoading(false); // End loading after token verification
             });
-    }, [navigate]); // Dodaj navigate do zależności useEffect
+    }, [navigate]); // Run this effect only once when the component mounts
+
+    // Show loading screen if token is being verified
+    if (loading) {
+        return (
+            <div className="loading-screen">
+                <h2>Loading...</h2>
+            </div>
+        );
+    }
 
     return (
-        <div className="App" onClick={extendSessionOnActivity}>
-            {/* Wyświetlanie Navbar tylko, gdy użytkownik jest zalogowany */}
+        <div className="App">
             {loggedIn && <Navbar setLoggedIn={setLoggedIn} setEmail={setEmail} />}
-
             <Routes>
                 <Route path="/activate" element={<GuestRoute loggedIn={loggedIn}><Activate /></GuestRoute>} />
                 <Route path="/profile/:userId" element={<ProtectedRoute loggedIn={loggedIn}><Profile /></ProtectedRoute>} />
@@ -126,3 +149,4 @@ function App() {
 }
 
 export default App;
+

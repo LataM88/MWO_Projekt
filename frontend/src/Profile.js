@@ -117,7 +117,7 @@ function Profile() {
             </div>
 
             <div className="profile-content">
-                <p className="email">{user.email}</p>
+                <p className="email">{user.imie + " " + user.nazwisko}</p>
                 <p>{user.id}</p>
                 <div className="email-line"></div>
                 <p className="title">O mnie:</p>

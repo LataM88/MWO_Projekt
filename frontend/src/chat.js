@@ -62,7 +62,6 @@ function Chat() {
         }
     };
 
-
     const handleSearch = (e) => {
         const query = e.target.value.toLowerCase();
         setFilteredUsers(users.filter(user =>
@@ -89,7 +88,7 @@ function Chat() {
                         >
                             <img src={user.image} alt={user.email} className="user-image" />
                             <div className="user-info">
-                                <span>{user.email}</span>
+                                <span>{user.imie + " " + user.nazwisko}</span>
                                 <span className={`status ${user.status}`}>{user.status === 'online' ? 'Dostępny' : 'Niedostępny'}</span>
                             </div>
                         </div>
@@ -101,8 +100,9 @@ function Chat() {
                 {activeUser ? (
                     <>
                         <div className="chat-header">
+                            <img src={activeUser.image} alt={activeUser.email} className="user-image-onscreen" />
                             <h2>
-                                Czatujesz z {activeUser.email}
+                                Czatujesz z {activeUser.imie + " " + activeUser.nazwisko} ({activeUser.email})
                             </h2>
                             <span className="status">{activeUser.status === 'online' ? 'Dostępny' : 'Niedostępny'}</span>
                         </div>

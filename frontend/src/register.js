@@ -7,20 +7,32 @@ import './css/fontello.css'
 const Register = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [imie, setImie] = useState(""); // Nowy stan dla imienia
+    const [nazwisko, setNazwisko] = useState(""); // Nowy stan dla nazwiska
     const [emailError, setEmailError] = useState("");
     const [passwordError, setPasswordError] = useState("");
-    const [successMessage, setSuccessMessageRegister] = useState("");  // Nowy stan dla komunikatu o sukcesie
-    const [errorMessage, setErrorMessageRegister] = useState("");      // Nowy stan dla komunikatu o błędzie
+    const [successMessage, setSuccessMessageRegister] = useState("");
+    const [errorMessage, setErrorMessageRegister] = useState("");
 
     const navigate = useNavigate();
 
     const onButtonClick = () => {
         setEmailError("");
         setPasswordError("");
-        setSuccessMessageRegister("");  // Czyszczenie komunikatu o sukcesie przed próbą rejestracji
-        setErrorMessageRegister("");    // Czyszczenie komunikatu o błędzie przed próbą rejestracji
+        setSuccessMessageRegister("");
+        setErrorMessageRegister("");
 
         // Walidacja danych wejściowych
+        if (!imie.trim()) {
+            setErrorMessageRegister("Proszę wprowadzić swoje imię");
+            return;
+        }
+
+        if (!nazwisko.trim()) {
+            setErrorMessageRegister("Proszę wprowadzić swoje nazwisko");
+            return;
+        }
+
         if ("" === email) {
             setEmailError("Proszę wprowadzić swój email");
             return;
@@ -47,15 +59,15 @@ const Register = () => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password, imie, nazwisko })
         })
         .then(response => response.json())
         .then(data => {
             if (data.message === "success") {
-                setSuccessMessageRegister("Email aktywacyjny wysłany na maila, będzie aktywny przez tydzień. Za 15 sekund przekierujemy Cię na strone logowania, lub kliknij w link");
+                setSuccessMessageRegister("Email aktywacyjny wysłany na maila...");
                 setTimeout(() => {
                     navigate("/login");
-                }, 15000);  // Przekierowanie po 15 sekundach
+                }, 15000);
             } else {
                 setErrorMessageRegister("Wystąpił błąd: " + data.message);
             }
@@ -73,6 +85,24 @@ const Register = () => {
                 </div>
                 <div className={"welcomeContainerRegister"}>
                     <div>Cześć, <br />Witamy po raz pierwszy!</div>
+                </div>
+                <br />
+                <div className="inputContainerRegister">
+                    <input
+                        value={imie}
+                        placeholder="Wprowadź swoje imię"
+                        onChange={ev => setImie(ev.target.value)}
+                        className="inputBoxRegister"
+                    />
+                </div>
+                <br />
+                <div className="inputContainerRegister">
+                    <input
+                        value={nazwisko}
+                        placeholder="Wprowadź swoje nazwisko"
+                        onChange={ev => setNazwisko(ev.target.value)}
+                        className="inputBoxRegister"
+                    />
                 </div>
                 <br />
                 <div className="inputContainerRegister">

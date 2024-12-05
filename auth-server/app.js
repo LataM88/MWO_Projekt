@@ -30,7 +30,7 @@ app.get('/', (_req, res) => {
 
 // Registration endpoint
 app.post('/register', async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, imie, nazwisko } = req.body;
 
     try {
         const { data: existingUser, error: userError } = await supabase
@@ -51,7 +51,7 @@ app.post('/register', async (req, res) => {
 
         const { data, error } = await supabase
             .from('users')
-            .insert([{ email, password: hashedPassword, isActive: false, activationCode, activationExpires }]);
+            .insert([{ imie, nazwisko, email, password: hashedPassword, isActive: false, activationCode, activationExpires }]);
 
         if (error) {
             console.error('Error inserting user:', error);
@@ -59,7 +59,9 @@ app.post('/register', async (req, res) => {
         }
 
         // Wysyłanie linku aktywacyjnego
-        const activationLink = `http://localhost:3080/activate?code=${activationCode}&email=${email}`;
+        const activationLink = `http://localhost:3080/activate?code=${activationCode}&email=${email}&imie=${imie}&nazwisko=${nazwisko}`;
+
+
 
 const mailOptions = {
     from: '"ProjektMWO2024" <projekt.mwo24@gmail.com>', // Nadawca
@@ -348,7 +350,7 @@ app.get('/activate', async (req, res) => {
     try {
         const { data: user, error } = await supabase
             .from('users')
-            .select('activationCode, isActive')
+            .select('activationCode, isActive, imie, nazwisko, activationExpires')
             .eq('email', email)
             .single();
 
@@ -380,8 +382,7 @@ app.get('/activate', async (req, res) => {
             return res.status(500).json({ message: 'Błąd aktywacji konta.' });
         }
 
-        // Przekierowanie na frontend
-        res.redirect(`http://localhost:3000/activate?status=success&email=${email}`);
+        res.redirect(`http://localhost:3000/activate?status=success&imie=${user.imie}&nazwisko=${user.nazwisko}`);
     } catch (err) {
         console.error('Unhandled error:', err);
         res.status(500).json({ message: 'Wewnętrzny błąd serwera.' });
@@ -391,7 +392,7 @@ app.get('/activate', async (req, res) => {
 app.get('/users', async (req, res) => {
     const { data, error } = await supabase
         .from('users')
-        .select('id, email, isActive, opis');
+        .select('id, imie, nazwisko, isActive, opis');
 
     if (error) {
         console.error('Error fetching users:', error);
