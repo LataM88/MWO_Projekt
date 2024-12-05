@@ -581,8 +581,8 @@ app.post('/messages', async (req, res) => {
             .insert([{ sender_id: senderId, receiver_id: receiverId, content }]);
 
         if (error) {
-            console.error('Error inserting message:', error);
-            return res.status(500).json({ message: 'Error inserting message', error });
+            console.error('Error inserting message:', error.message); // Dodatkowa informacja o błędzie
+            return res.status(500).json({ message: 'Error inserting message', error: error.message });
         }
 
         res.status(201).json({ message: 'Message sent successfully', data });
@@ -592,19 +592,30 @@ app.post('/messages', async (req, res) => {
     }
 });
 
-app.get('/messages/:userId', async (req, res) => {
-    const userId = req.params.userId;
-    const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`);
+app.get('/messages/:userId/:receiverId', async (req, res) => {
+    let { userId, receiverId } = req.params;
 
-    if (error) {
-        console.error('Error fetching messages:', error);
-        return res.status(500).json({ message: 'Error fetching messages', error });
+    // Konwersja userId i receiverId na liczby
+    userId = parseInt(userId, 10);  // Konwersja na liczbę
+    receiverId = parseInt(receiverId, 10);  // Konwersja na liczbę
+
+    try {
+        const { data, error } = await supabase
+            .from('messages')
+            .select('*')
+            .in('sender_id', [userId, receiverId])
+            .in('receiver_id', [userId, receiverId]);
+
+        if (error) {
+            console.error('Error fetching messages:', error);
+            return res.status(500).json({ message: 'Error fetching messages', error });
+        }
+
+        res.status(200).json({ messages: data });
+    } catch (err) {
+        console.error('Unexpected error:', err);
+        res.status(500).json({ message: 'Unexpected error', error: err });
     }
-
-    res.status(200).json({ messages: data });
 });
 
 // Starting server

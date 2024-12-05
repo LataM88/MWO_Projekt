@@ -22,20 +22,25 @@ function Chat() {
 
     useEffect(() => {
         if (activeUser) {
+            console.log(`Fetching messages for ${currentUser.userId} and ${activeUser.id}`); // Dodaj logowanie
             const fetchMessages = async () => {
-                const response = await fetch(`http://localhost:3080/messages/${activeUser.id}`);
+                const response = await fetch(`http://localhost:3080/messages/${currentUser.userId}/${activeUser.id}`);
                 const data = await response.json();
-                setMessages(data.messages);
+                if (data && data.messages) {
+                    setMessages(data.messages);
+                } else {
+                    setMessages([]); // Zainicjalizuj pustą tablicę, jeśli brak wiadomości
+                }
             };
             fetchMessages();
         }
-    }, [activeUser]);
+    }, [activeUser, currentUser.userId]);
 
     const handleSendMessage = async () => {
         if (message && activeUser) {
             const newMessage = {
-                senderId: currentUser.userId, // Dynamicznie ustawiane ID zalogowanego użytkownika
-                receiverId: activeUser.id,
+                senderId: currentUser.userId, // ID zalogowanego użytkownika
+                receiverId: activeUser.id,    // ID odbiorcy
                 content: message,
             };
 
@@ -48,13 +53,15 @@ function Chat() {
             });
 
             if (response.ok) {
-                setMessages([...messages, newMessage]);
+                // Zaktualizuj wiadomości po wysłaniu
+                setMessages(prevMessages => [...prevMessages, newMessage]);
                 setMessage('');
             } else {
                 console.error('Failed to send message:', response.statusText);
             }
         }
     };
+
 
     const handleSearch = (e) => {
         const query = e.target.value.toLowerCase();
