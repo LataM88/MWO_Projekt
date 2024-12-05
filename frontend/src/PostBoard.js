@@ -59,17 +59,8 @@ const PostBoard = () => {
                 return;
             }
 
-            const savedPost = await response.json();
-
-            setPosts([{
-                ...savedPost,
-                user: {
-                    email: userEmail,
-                    image: userIcon,
-                    imie: savedPost.user?.imie || 'Nieznane imię',
-                    nazwisko: savedPost.user?.nazwisko || 'Nieznane nazwisko',
-                },
-            }, ...posts]);
+            // Po zapisaniu posta, odśwież listę postów
+            await fetchPosts();
 
             setContent(''); // Resetowanie pola tekstowego
         } catch (error) {
@@ -77,6 +68,7 @@ const PostBoard = () => {
             alert('Nie udało się zapisać posta.');
         }
     };
+
 
     // Pobiera wszystkie posty z API
     const fetchPosts = async () => {
