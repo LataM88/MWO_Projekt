@@ -17,6 +17,9 @@ const Home = (props) => {
             navigate("/login")
         }
     }
+    const storedData = localStorage.getItem("user");
+    const userData = storedData ? JSON.parse(storedData) : null;
+    const loggedInUserEmail = userData ? userData.email : null;
 
     const onButtonClickReg = () => {
         navigate("/register")
@@ -24,7 +27,9 @@ const Home = (props) => {
 
     // Funkcja przenosząca do strony chat.js
     const onGoToChat = () => {
-        navigate("/chat");  // Zakładając, że masz trasę /chat w routerze
+        if (loggedIn) {
+            navigate(`/chat/${email}`); // Pass logged-in user's email to the chat route
+        }
     }
 
     return (

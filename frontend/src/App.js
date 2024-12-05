@@ -111,7 +111,7 @@ function App() {
                     <Route path="/login" element={<GuestRoute loggedIn={loggedIn}><Login setLoggedIn={setLoggedIn} setEmail={setEmail} /></GuestRoute>} />
                     <Route path="/register" element={<GuestRoute loggedIn={loggedIn}><Register /></GuestRoute>} />
                     <Route path="/zapomnialesHasla" element={<GuestRoute loggedIn={loggedIn}><ForgotPassword /></GuestRoute>} />
-                    <Route path="/chat" element={<ProtectedRoute loggedIn={loggedIn}><Chat /></ProtectedRoute>} />
+                    <Route path="/chat/:userId" element={<ProtectedRoute loggedIn={loggedIn}><Chat /></ProtectedRoute>} />
                 </Routes>
             </BrowserRouter>
         </div>

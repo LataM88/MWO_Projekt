@@ -1,126 +1,151 @@
-/* Main User Panel */
-.userr-panel {
-    position: absolute;
-    background-color: rgba(21, 72, 75, 0.85); /* Lighter green background with reduced opacity */
-    border-radius: 12px; /* Rounded corners for panel */
+/* User Panel Block */
+
+
+.user-panel-block {
+    width: 500px; /* Increased width */
+    background-color: rgba(21, 72, 75, 0.9);
+    color: white;
+    border-radius: 12px;
     padding: 20px;
-    display: none;
-    flex-direction: column;
-    align-items: flex-start;
-    border: 1px solid #ccc;
-    z-index: 999; /* Ensure the panel appears above other content */
-    transition: transform 0.3s ease-in-out, opacity 0.3s ease; /* Smooth transition for pop-in effect */
-    max-width: 300px; /* Dynamically set width based on content (email length) */
-    min-width: 200px;
-    font-family: "Langar";
+    font-family: "Langar", cursive;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    overflow: hidden; /* Ensures that the scroll is hidden but still functional */
 }
 
-.userr-panel.show {
+/* Panel Title */
+.user-panel-title {
+    font-size: 20px;
+    margin-bottom: 15px;
+    text-align: center;
+    color: #fff;
+}
+
+/* Search Box */
+.user-panel-search-box {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+/* Tab styles */
+.tabs {
     display: flex;
-    transform: translateY(0); /* Smoothly slide in */
-    opacity: 1; /* Make the panel fully visible */
+    justify-content: space-between;
+    margin-bottom: 10px;
 }
 
-.userr-panel.hide {
-    display: none;
-    opacity: 0;
-    transform: translateY(-20px); /* Smooth slide-out effect */
+.tabs button {
+    background-color: transparent;
+    border: 1px solid #fff;
+    color: white;
+    padding: 8px 15px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+}
+
+.tabs button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.tabs button.selected {
+    background-color: rgba(30, 100, 105, 1);
+    font-weight: bold;
 }
 
 /* User List Styles */
-.userr-list {
+.user-panel-list {
     list-style-type: none;
     padding: 0;
     margin: 0;
-    width: 100%;
-    background-color: rgba(21, 72, 75, 0.85); /* Lighter green background for the list */
-    border-radius: 8px; /* Rounded corners for the user list */
-    color: white; /* White text color for the list items */
-    overflow-y: auto; /* Enable vertical scrolling */
-    max-height: 300px; /* Limit the height of the list */
-    padding-right: 10px; /* Add space to the right to avoid cutting off the text */
-    scrollbar-width: none; /* Hide scrollbar for Firefox */
+    max-height: 400px; /* Scrollable area */
+    overflow-y: auto; /* Keep scroll functional */
 }
 
-.userr-list::-webkit-scrollbar {
-    display: none; /* Hide scrollbar for Webkit browsers (Chrome, Safari) */
+/* Invisible scrollbar for WebKit browsers (Chrome, Safari) */
+.user-panel-list::-webkit-scrollbar {
+    width: 0px; /* Hides the scrollbar */
+    height: 0px; /* Hides the scrollbar */
 }
 
-.userr-list li {
-    padding: 12px 20px; /* Add padding to make the items more clickable */
-    cursor: pointer;
-    font-size: 16px;
-    width: 100%;
-    border-radius: 8px;
-    margin-bottom: 8px; /* Space between list items */
-    transition: background-color 0.3s ease, padding-left 0.2s ease; /* Smooth transition for hover */
-    word-wrap: break-word; /* Ensure emails break onto the next line if needed */
-}
-
-/* Hover Effect for List Items */
-.userr-list li:hover {
-    background-color: rgba(25, 88, 93, 0.8); /* Slightly lighter and less intense green for hover */
-    padding-left: 15px; /* Slight slide effect on hover */
-}
-
-/* Button to show/hide the user panel */
-.userr-panel-button {
-    display: inline-flex; /* Use inline-flex so the button fits around the icon */
+.user-panel-item {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 5px; /* Slight padding to make the button just bigger than the icon */
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
     cursor: pointer;
-    background-color: rgba(21, 72, 75, 0.85); /* Lighter green background for button */
-    color: white;
-    border-radius: 25px; /* Rounded corners for the button */
-    border: none;
+    background-color: rgba(25, 88, 93, 0.8);
     transition: background-color 0.3s;
-    width: 50px; /* Set button width slightly bigger than the icon */
-    height: 50px; /* Set button height to match the icon size + padding */
+    position: relative;
 }
 
-/* Ensure the button size matches the icon's size */
-.userr-panel-button img {
-    width: 80%; /* Slightly smaller than button size, fits within the button */
-    height: auto; /* Maintain the aspect ratio of the icon */
+.user-panel-item:hover {
+    background-color: rgba(30, 100, 105, 1);
 }
 
-/* Hover Effect for the Button */
-.userr-panel-button:hover {
-    background-color: rgba(25, 88, 93, 0.8); /* Lighter hover effect for button */
+/* Move the status dot to the left side */
+.user-panel-status {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 10px; /* Space between the status and avatar */
+    display: inline-block;
 }
 
-.userr-panel-button:focus {
-    outline: none; /* Remove outline on focus */
+.user-panel-status.online {
+    background-color: green;
 }
 
-/* Optional: Animation for smooth fade-in */
-@keyframes fadeIn {
-    0% { opacity: 0; }
-    100% { opacity: 1; }
+.user-panel-status.offline {
+    background-color: gray;
 }
 
-.userr-panel.show {
-    animation: fadeIn 0.3s ease-in-out;
+.user-panel-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
 }
 
-/* Styles for empty state when no users are found */
-.userr-list li.no-users {
-    text-align: center;
-    color: #888;
+.user-panel-name {
+    font-size: 14px;
+    color: white;
+    flex-grow: 1;
+    word-wrap: break-word;
+    max-width: 300px; /* Increased max-width for name */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.user-panel-name[title] {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.chat-button {
+    background-color: rgba(0, 123, 255, 0.8);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    position: absolute;
+    right: 10px;
+}
+
+.chat-button:hover {
+    background-color: rgba(0, 123, 255, 1);
+}
+
+.user-panel-no-users {
+    color: #bbb;
     font-style: italic;
-}
-
-/* Keep button color changed until the panel is closed */
-.userr-panel.show .user-panel-button {
-    background-color: rgba(25, 88, 93, 0.9); /* Darker green when panel is open */
-}
-
-/* Revert the button color to the original when the panel is closed */
-.userr-panel.hide .user-panel-button {
-    background-color: rgba(21, 72, 75, 0.85); /* Original lighter green */
-}
-
-.white-image {
-    filter: brightness(0) invert(1);
 }

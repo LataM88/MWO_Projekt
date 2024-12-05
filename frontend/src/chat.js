@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import './chat.css';
 
 function Chat() {
+    const { userId } = useParams(); // Get userId from the URL
+    const navigate = useNavigate();
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState({});
     const [users, setUsers] = useState([]);
@@ -16,8 +19,14 @@ function Chat() {
                 if (response.ok) {
                     const data = await response.json();
                     setUsers(data);
-                    setFilteredUsers(data); // Domyślnie filtr pokazuje wszystkich
-                    setActiveUser(data[0] || null); // Ustaw pierwszego użytkownika jako aktywnego
+
+                    // Find the user with the given userId from the URL
+                    const selectedUser = data.find(user => user.id === parseInt(userId));
+                    if (selectedUser) {
+                        setActiveUser(selectedUser);
+                    } else {
+                        setActiveUser(null);
+                    }
                 } else {
                     console.error('Failed to fetch users:', response.statusText);
                 }
@@ -39,7 +48,7 @@ function Chat() {
 
             setMessages((prevMessages) => ({
                 ...prevMessages,
-                [activeUser.email]: [...(prevMessages[activeUser.email] || []), newMessage],
+                [activeUser.id]: [...(prevMessages[activeUser.id] || []), newMessage],
             }));
 
             setMessage('');
@@ -68,7 +77,7 @@ function Chat() {
                     />
                 </div>
                 <div className="users">
-                    {filteredUsers.map((user, index) => (
+                    {(filteredUsers.length > 0 ? filteredUsers : users).map((user, index) => (
                         <div
                             key={index}
                             className="user"
