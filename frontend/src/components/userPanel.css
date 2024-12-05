@@ -150,9 +150,29 @@
     width: 180px; /* Fixed dropdown width */
     max-height: 250px; /* Limit the max-height */
     overflow-y: auto; /* Scroll if content overflows */
-    font-family: 'Langar';
+    font-family: 'Langar', cursive; /* Ensure Langar font is applied */
     color: #fff; /* Light text for high contrast */
     opacity: 0.95; /* Slight opacity to make it visually distinct */
+}
+
+/* Ensure buttons in the dropdown also use Langar font */
+.user-options-button {
+    font-family: 'Langar', cursive; /* Apply Langar font */
+    width: 100%;
+    padding: 10px; /* Slightly larger button for ease of clicking */
+    border: none;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.15); /* Slightly darker background for better clarity */
+    color: #fff; /* White text for better contrast */
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.3s, color 0.3s; /* Smooth hover effect */
+    font-size: 14px; /* Make text legible */
+}
+
+/* Ensure any other text inside the dropdown uses Langar font */
+.user-options-dropdown * {
+    font-family: 'Langar', cursive; /* Apply Langar font universally inside dropdown */
 }
 
 .user-panel-item:hover .user-options-dropdown {
@@ -184,8 +204,6 @@
     background-color: rgba(0, 0, 0, 0.2); /* Darken button slightly on hover */
     color: #fff; /* Ensure the text remains white on hover */
 }
-
-
 
 .user-panel-no-users {
     text-align: center;

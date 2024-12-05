@@ -184,7 +184,7 @@ const UserPanel = () => {
                         </li>
                     ))
                 ) : (
-                    <p className="user-panel-no-users">Brak użytkowników do wyświetlenia</p>
+                    <p className="user-panel-no-users">Brak znajomych</p>
                 )}
             </ul>
         </div>
