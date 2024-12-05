@@ -76,7 +76,7 @@ function Chat() {
                         >
                             <img src={user.image} alt={user.email} className="user-image" />
                             <div className="user-info">
-                                <span>{user.email}</span>
+                                <span>{user.imie + " " + user.nazwisko}</span>
                                 <span className={`status ${user.status}`}>{user.status === 'online' ? 'Dostępny' : 'Niedostępny'}</span>
                             </div>
                         </div>
@@ -91,7 +91,7 @@ function Chat() {
                         <div className="chat-header">
                             <h2>
                                 <img src={activeUser.image} alt={activeUser.email} className="user-image-onscreen" />
-                                Czatujesz z {activeUser.email}
+                                Czatujesz z {activeUser.imie + " " + activeUser.nazwisko}
                             </h2>
                             <span className="status">{activeUser.status === 'online' ? 'Dostępny' : 'Niedostępny'}</span>
                         </div>
