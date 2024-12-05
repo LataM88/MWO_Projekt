@@ -8,6 +8,7 @@ const UserPanel = () => {
     const [filteredUsers, setFilteredUsers] = useState([]); // Filtered users to display
     const [selectedTab, setSelectedTab] = useState("allUsers"); // Track the selected tab
     const [searchQuery, setSearchQuery] = useState(""); // Search query state
+    const [dropdownUserId, setDropdownUserId] = useState(null); // Track which user has the dropdown open
     const navigate = useNavigate();
 
     const storedData = localStorage.getItem("user");
@@ -81,19 +82,35 @@ const UserPanel = () => {
     };
 
     // Navigate to chat with the selected user
-    const handleChatClick = (userId) => {
+    const handleChatClick = (userId, e) => {
+        e.stopPropagation(); // Prevent dropdown from closing immediately
         navigate(`/chat/${userId}`);
     };
 
     // Navigate to the selected user's profile
-    const handleProfileClick = (userId) => {
+    const handleProfileClick = (userId, e) => {
+        e.stopPropagation(); // Prevent dropdown from closing immediately
         navigate(`/profile/${userId}`);
     };
 
-    // Toggle tab selection
-    const toggleTab = (tab) => {
-        setSelectedTab(tab);
+    const toggleDropdown = (userId) => {
+        const userElement = document.getElementById(`user-${userId}`);
+        const rect = userElement.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom; // Space below the element
+        const nearBottom = spaceBelow < 100; // Threshold for enough space, adjust as needed
+
+        // Toggle the dropdown visibility
+        setDropdownUserId(dropdownUserId === userId ? null : userId);
+
+        // Apply a class to adjust the dropdown's position
+        if (nearBottom) {
+            userElement.classList.add("dropdown-up"); // Position above if near bottom
+        } else {
+            userElement.classList.remove("dropdown-up"); // Default position below
+        }
     };
+
+
 
     // Function to get user name or email
     const getUserName = (user) => {
@@ -104,7 +121,7 @@ const UserPanel = () => {
 
     return (
         <div className="user-panel-block">
-            <h2 className="user-panel-title">Lista użytkowników</h2>
+            <h2 className="user-panel-title">Użytkownicy</h2>
             <input
                 type="text"
                 className="user-panel-search-box"
@@ -114,13 +131,13 @@ const UserPanel = () => {
             />
             <div className="tabs">
                 <button
-                    onClick={() => toggleTab("allUsers")}
+                    onClick={() => setSelectedTab("allUsers")}
                     className={selectedTab === "allUsers" ? "selected" : ""}
                 >
                     Wszyscy użytkownicy
                 </button>
                 <button
-                    onClick={() => toggleTab("friends")}
+                    onClick={() => setSelectedTab("friends")}
                     className={selectedTab === "friends" ? "selected" : ""}
                 >
                     Znajomi
@@ -129,39 +146,45 @@ const UserPanel = () => {
             <ul className="user-panel-list">
                 {filteredUsers.length > 0 ? (
                     filteredUsers.map((user) => (
-                        <li key={user.id} className="user-panel-item">
-                            {/* Status on the left side of the avatar */}
+                        <li
+                            key={user.id}
+                            id={`user-${user.id}`}
+                            className="user-panel-item"
+                            onClick={() => toggleDropdown(user.id)} // Toggle dropdown on user click
+                        >
                             <span
-                                className={`user-panel-status ${user.isActive ? "online" : "offline"}`}
-                                title={user.isActive ? "Online" : "Offline"}
-                            ></span>
-                            <img
-                                src={user.image || "default-avatar.png"}
-                                alt={`Avatar of ${getUserName(user)}`}
-                                className="user-panel-avatar"
-                                onClick={() => handleProfileClick(user.id)} // Navigate to profile when clicking the avatar
+                                className={`user-panel-status ${
+                                    user.status === "online" ? "online" : "offline"
+                                }`}
                             />
-                            <span
-                                className="user-panel-name"
-                                title={getUserName(user)}
-                                onClick={() => handleProfileClick(user.id)} // Navigate to profile when clicking the name
-                            >
+                            <img
+                                className="user-panel-avatar"
+                                src={user.image}
+                                alt={user.name}
+                            />
+                            <span className="user-panel-name" title={getUserName(user)}>
                                 {getUserName(user)}
                             </span>
-
-                            {/* Button with updated text */}
-                            <button
-                                className="chat-button"
-                                onClick={() => handleChatClick(user.id)} // Using user.id here
-                            >
-                                Wyślij wiadomość
-                            </button>
+                            {dropdownUserId === user.id && (
+                                <div className="user-options-dropdown">
+                                    <button
+                                        onClick={(e) => handleProfileClick(user.id, e)}
+                                        className="user-options-button"
+                                    >
+                                        Profil
+                                    </button>
+                                    <button
+                                        onClick={(e) => handleChatClick(user.id, e)}
+                                        className="user-options-button"
+                                    >
+                                        Wyślij Wiadomość
+                                    </button>
+                                </div>
+                            )}
                         </li>
                     ))
                 ) : (
-                    <li className="user-panel-no-users">
-                        {selectedTab === "allUsers" ? "Brak użytkowników." : "Brak znajomych."}
-                    </li>
+                    <p className="user-panel-no-users">Brak użytkowników do wyświetlenia</p>
                 )}
             </ul>
         </div>

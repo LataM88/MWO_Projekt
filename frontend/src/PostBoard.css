@@ -1,11 +1,30 @@
 /* src/PostBoard.css */
 .postboard-container-unique {
-    max-width: 800px;
+    width: 800px;
     margin: 0 auto;
     background-color: white;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.main-container {
+    display: flex;
+    width: 100%;
+    position: relative; /* To allow absolute positioning inside it */
+}
+
+.postboard-container-unique {
+   margin-left: calc(30vw + 100px); /* Push content to the right to make space for the sidebar */
+}
+
+/* Sidebar for UserPanel */
+.userpanel-container {
+    margin: auto;
+    margin-left:0px;
+    height: calc(100vh - 78px);
+    width: content; /* Fixed width for the sidebar */
+    flex-shrink: 0; /* Prevents it from shrinking */
+    position: absolute;
 }
 
 form.postboard-form {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './PostBoard.css';
+import UserPanel from "./components/UserPanel.jsx";
 
 const PostBoard = () => {
     const [posts, setPosts] = useState([]);
@@ -95,51 +96,54 @@ const PostBoard = () => {
     }, []); // Wykonuje się raz przy renderowaniu komponentu
 
     return (
-        <div className="postboard-container-unique">
-            <h1>Tablica Postów</h1>
+        <div className="main-container">
+            <div className="userpanel-container"><UserPanel/></div>
+            <div className="postboard-container-unique">
+                <h1>Tablica Postów</h1>
 
-            {/* Formularz do dodawania posta */}
-            <form className="postboard-form" onSubmit={handlePostSubmit}>
-                <textarea
-                    className="postboard-textarea"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder="Co słychać?"
-                ></textarea>
-                <button className="postboard-button" type="submit">Dodaj post</button>
-            </form>
+                {/* Formularz do dodawania posta */}
+                <form className="postboard-form" onSubmit={handlePostSubmit}>
+                    <textarea
+                        className="postboard-textarea"
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        placeholder="Co słychać?"
+                    ></textarea>
+                    <button className="postboard-button" type="submit">Dodaj post</button>
+                </form>
 
-            {/* Wyświetlanie listy postów */}
-            <div>
-                <h2>Wszystkie posty:</h2>
-                {posts.length === 0 ? (
-                    <p className="black-text3">Brak postów na tablicy!</p>
-                ) : (
-                    <ul className="postboard-posts-list">
-                        {posts.map((post, index) => (
-                            <li key={post.id || index} className="postboard-post-item">
-                                <div className="post-header">
-                                    <img
-                                        src={post.user?.image || 'default-avatar.jpg'}
-                                        alt="Ikona użytkownika"
-                                        className="user-icon"
-                                    />
-                                    <div className="user-info">
-                    <span className="post-user-name">
-                        {post.user?.imie || 'Nieznane imię'} {post.user?.nazwisko || 'Nieznane nazwisko'}
-                    </span>
-                                        <span
-                                            className="post-user-email">({post.user?.email || 'Nieznany email'})</span>
+                {/* Wyświetlanie listy postów */}
+                <div>
+                    <h2>Wszystkie posty:</h2>
+                    {posts.length === 0 ? (
+                        <p className="black-text3">Brak postów na tablicy!</p>
+                    ) : (
+                        <ul className="postboard-posts-list">
+                            {posts.map((post, index) => (
+                                <li key={post.id || index} className="postboard-post-item">
+                                    <div className="post-header">
+                                        <img
+                                            src={post.user?.image || 'default-avatar.jpg'}
+                                            alt="Ikona użytkownika"
+                                            className="user-icon"
+                                        />
+                                        <div className="user-info">
+                        <span className="post-user-name">
+                            {post.user?.imie || 'Nieznane imię'} {post.user?.nazwisko || 'Nieznane nazwisko'}
+                        </span>
+                                            <span
+                                                className="post-user-email">({post.user?.email || 'Nieznany email'})</span>
+                                        </div>
                                     </div>
-                                </div>
-                                <p className="black-text2">{post.content}</p>
-                                <small className="postboard-post-date">
-                                    {new Date(post.created_at).toLocaleString()}
-                                </small>
-                            </li>
-                        ))}
-                    </ul>
-                )}
+                                    <p className="black-text2">{post.content}</p>
+                                    <small className="postboard-post-date">
+                                        {new Date(post.created_at).toLocaleString()}
+                                    </small>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
             </div>
         </div>
     );

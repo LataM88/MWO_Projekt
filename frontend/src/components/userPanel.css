@@ -1,21 +1,25 @@
 /* User Panel Block */
-
-
 .user-panel-block {
-    width: 500px; /* Increased width */
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 250px;
     background-color: rgba(21, 72, 75, 0.9);
     color: white;
-    border-radius: 12px;
     padding: 20px;
     font-family: "Langar", cursive;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    overflow: hidden; /* Ensures that the scroll is hidden but still functional */
+    box-shadow: 4px 0 6px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+    overflow-y: auto;
+    overflow-x: visible; /* Ensure horizontal overflow is visible */
+    position: relative;
 }
 
 /* Panel Title */
 .user-panel-title {
-    font-size: 20px;
-    margin-bottom: 15px;
+    font-size: 22px;
+    margin-bottom: 20px;
     text-align: center;
     color: #fff;
 }
@@ -28,24 +32,32 @@
     border: none;
     border-radius: 8px;
     font-size: 14px;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white; /* Ensure the default text is white */
+}
+.user-panel-search-box::placeholder{
+    color: white;
 }
 
-/* Tab styles */
+/* Tabs */
 .tabs {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
 }
 
 .tabs button {
     background-color: transparent;
     border: 1px solid #fff;
     color: white;
-    padding: 8px 15px;
+    padding: 12px;
     font-size: 16px;
     cursor: pointer;
     transition: all 0.3s ease;
     border-radius: 8px;
+    text-align: center;
+    width: 100%; /* Make buttons take up full width */
+    font-family: "Langar", cursive; /* Set the font to Langar */
 }
 
 .tabs button:hover {
@@ -62,19 +74,19 @@
     list-style-type: none;
     padding: 0;
     margin: 0;
-    max-height: 400px; /* Scrollable area */
-    overflow-y: auto; /* Keep scroll functional */
+    overflow-y: show;
 }
 
-/* Invisible scrollbar for WebKit browsers (Chrome, Safari) */
+/* Invisible scrollbar for WebKit browsers */
 .user-panel-list::-webkit-scrollbar {
-    width: 0px; /* Hides the scrollbar */
-    height: 0px; /* Hides the scrollbar */
+    width: 0px;
+    height: 0px;
 }
 
 .user-panel-item {
     display: flex;
     align-items: center;
+    text-align: left;
     padding: 10px;
     border-radius: 8px;
     margin-bottom: 10px;
@@ -82,19 +94,20 @@
     background-color: rgba(25, 88, 93, 0.8);
     transition: background-color 0.3s;
     position: relative;
+    width: 100%; /* Ensures the entire item takes up available space */
+    overflow: visible; /* Allow the dropdown to overflow outside of the item */
 }
 
 .user-panel-item:hover {
-    background-color: rgba(30, 100, 105, 1);
+    background-color: rgba(30, 98, 104, 0.8);
 }
 
-/* Move the status dot to the left side */
+/* Status Indicator */
 .user-panel-status {
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    margin-right: 10px; /* Space between the status and avatar */
-    display: inline-block;
+    margin-right: 10px;
 }
 
 .user-panel-status.online {
@@ -102,50 +115,81 @@
 }
 
 .user-panel-status.offline {
-    background-color: gray;
+    background-color: red;
 }
 
+/* Avatar */
 .user-panel-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    object-fit: cover;
-    margin-right: 10px;
+    margin-right: 15px;
 }
 
+/* Name */
 .user-panel-name {
-    font-size: 14px;
+    flex: 1;
+    font-size: 16px;
     color: white;
-    flex-grow: 1;
-    word-wrap: break-word;
-    max-width: 300px; /* Increased max-width for name */
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
-.user-panel-name[title] {
-    text-decoration: underline;
-    cursor: pointer;
-}
-
-.chat-button {
-    background-color: rgba(0, 123, 255, 0.8);
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    font-size: 14px;
-    border-radius: 8px;
-    cursor: pointer;
+.user-options-dropdown {
+    display: none;
     position: absolute;
-    right: 10px;
+    top: 100%; /* Default position below the user item */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(25, 88, 93, 0.95); /* More solid background for better clarity */
+    border-radius: 8px;
+    padding: 12px; /* More space for the content */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Stronger shadow for clearer separation */
+    z-index: 1000; /* Ensure the dropdown is above other elements */
+    width: 180px; /* Fixed dropdown width */
+    max-height: 250px; /* Limit the max-height */
+    overflow-y: auto; /* Scroll if content overflows */
+    font-family: 'Langar';
+    color: #fff; /* Light text for high contrast */
+    opacity: 0.95; /* Slight opacity to make it visually distinct */
 }
 
-.chat-button:hover {
-    background-color: rgba(0, 123, 255, 1);
+.user-panel-item:hover .user-options-dropdown {
+    display: block;
 }
+
+/* Adjust dropdown position when near the bottom or top */
+.user-panel-item.dropdown-up .user-options-dropdown {
+    top: auto;
+    bottom: 100%; /* Show the dropdown above */
+    transform: translateX(-50%) translateY(-10px); /* Slight offset for better visibility */
+}
+
+/* Dropdown button styles */
+.user-options-button {
+    width: 100%;
+    padding: 10px; /* Slightly larger button for ease of clicking */
+    border: none;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.15); /* Slightly darker background for better clarity */
+    color: #fff; /* White text for better contrast */
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.3s, color 0.3s; /* Smooth hover effect */
+    font-size: 14px; /* Make text legible */
+}
+
+.user-options-button:hover {
+    background-color: rgba(0, 0, 0, 0.2); /* Darken button slightly on hover */
+    color: #fff; /* Ensure the text remains white on hover */
+}
+
+
 
 .user-panel-no-users {
-    color: #bbb;
-    font-style: italic;
+    text-align: center;
+    color: white;
+    font-size: 16px;
+    margin-top: 20px;
 }
