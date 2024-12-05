@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 import { createClient } from '@supabase/supabase-js';
 //Profilowe
 import multer from 'multer';
+import sharp from 'sharp';
 
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -469,11 +470,17 @@ app.post('/upload-profile-image/:userId', upload.single('image'), async (req, re
         return res.status(400).json({ message: 'Plik nie został przesłany.' });
     }
 
-    const fileExtension = file.originalname.split('.').pop();
+    const fileExtension = 'jpeg';
     const fileName = `${userId}.${fileExtension}`;
 
     try {
-        // Check if file exists
+
+        const resizedImageBuffer = await sharp(file.buffer)
+            .resize(300, 300, { fit: sharp.fit.cover })
+            .toFormat(fileExtension)
+            .toBuffer();
+
+        // Sprawdź, czy istnieje plik w Supabase
         const { data: existingFile, error: checkError } = await supabase
             .storage
             .from('profile-image')
@@ -484,7 +491,7 @@ app.post('/upload-profile-image/:userId', upload.single('image'), async (req, re
             return res.status(500).json({ message: 'Error checking file existence in Supabase.' });
         }
 
-        // If file exists, delete it
+        // Jeśli plik istnieje, usuń go
         if (existingFile.length > 0) {
             const { error: deleteError } = await supabase
                 .storage
@@ -497,18 +504,19 @@ app.post('/upload-profile-image/:userId', upload.single('image'), async (req, re
             }
         }
 
-        // Upload new file
+        // Prześlij nowy plik
         const { data, error } = await supabase.storage
             .from('profile-image')
-            .upload(fileName, file.buffer, { contentType: file.mimetype });
+            .upload(fileName, resizedImageBuffer, { contentType: `image/${fileExtension}` });
 
         if (error) {
             console.error('Error uploading image to Supabase:', error);
             return res.status(500).json({ message: 'Błąd przesyłania obrazu do Supabase.' });
         }
 
-        const imageUrl = `${supabaseUrl}/storage/v1/object/public/profile-image/${fileName}?${new Date().getTime()}`
+        const imageUrl = `${supabaseUrl}/storage/v1/object/public/profile-image/${fileName}?${new Date().getTime()}`;
 
+        // Zaktualizuj profil użytkownika
         const { error: updateError } = await supabase
             .from('users')
             .update({ image: imageUrl })
@@ -519,10 +527,10 @@ app.post('/upload-profile-image/:userId', upload.single('image'), async (req, re
             return res.status(500).json({ message: 'Błąd aktualizacji profilu użytkownika.' });
         }
 
-        res.status(200).json({ imageUrl });
+        res.status(200).json({ message: 'Zdjęcie profilowe zostało pomyślnie przesłane.', imageUrl });
     } catch (err) {
-        console.error('Błąd podczas przetwarzania obrazu:', err);
-        res.status(500).json({ message: 'Błąd serwera.' });
+        console.error('Unexpected error:', err);
+        res.status(500).json({ message: 'Nieoczekiwany błąd serwera.' });
     }
 });
 
