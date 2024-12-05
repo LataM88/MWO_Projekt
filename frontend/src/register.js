@@ -7,12 +7,13 @@ import './css/fontello.css'
 const Register = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [imie, setImie] = useState("");
-    const [nazwisko, setNazwisko] = useState("");
+    const [imie, setImie] = useState(""); // Nowy stan dla imienia
+    const [nazwisko, setNazwisko] = useState(""); // Nowy stan dla nazwiska
     const [emailError, setEmailError] = useState("");
     const [passwordError, setPasswordError] = useState("");
     const [successMessage, setSuccessMessageRegister] = useState("");
     const [errorMessage, setErrorMessageRegister] = useState("");
+
     const navigate = useNavigate();
 
     const onButtonClick = () => {
@@ -58,7 +59,7 @@ const Register = () => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ email, password, imie, nazwisko }
+            body: JSON.stringify({ email, password, imie, nazwisko })
         })
         .then(response => response.json())
         .then(data => {

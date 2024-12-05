@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import "./profile.css";
+import './profile.css';
 
 function Profile() {
     const { userId } = useParams();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
-    const [editedOpis, setEditedOpis] = useState("");
+    const [editedOpis, setEditedOpis] = useState('');
     const [isOwnProfile, setIsOwnProfile] = useState(false);
 
     const loggedInUser = JSON.parse(localStorage.getItem('user'));
@@ -23,15 +23,14 @@ function Profile() {
             setIsOwnProfile(false);
         }
 
-
         fetch(`http://localhost:3080/user/${userId}`)
-            .then(res => res.json())
-            .then(data => {
+            .then((res) => res.json())
+            .then((data) => {
                 setUser(data);
-                setEditedOpis(data.opis || "");
+                setEditedOpis(data.opis || '');
                 setLoading(false);
             })
-            .catch(err => {
+            .catch((err) => {
                 console.error('Błąd pobierania danych użytkownika:', err);
                 setLoading(false);
             });
@@ -40,7 +39,7 @@ function Profile() {
     const toggleEditMode = () => {
         setIsEditing(!isEditing);
         if (!isEditing) {
-            setEditedOpis(user.opis || "");
+            setEditedOpis(user.opis || '');
         }
     };
 
@@ -50,23 +49,51 @@ function Profile() {
 
     const saveOpis = () => {
         fetch(`http://localhost:3080/user/${userId}`, {
-            method: "PUT",
+            method: 'PUT',
             headers: {
-                "Content-Type": "application/json",
+                'Content-Type': 'application/json',
             },
             body: JSON.stringify({ opis: editedOpis }),
         })
-            .then(res => {
+            .then((res) => {
                 if (res.ok) {
-                    setUser(prev => ({ ...prev, opis: editedOpis }));
+                    setUser((prev) => ({ ...prev, opis: editedOpis }));
                     setIsEditing(false);
                 } else {
-                    console.error("Błąd podczas zapisywania opisu.");
+                    console.error('Błąd podczas zapisywania opisu.');
                 }
             })
-            .catch(err => {
-                console.error("Błąd:", err);
+            .catch((err) => {
+                console.error('Błąd:', err);
             });
+    };
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+            const response = await fetch(`http://localhost:3080/upload-profile-image/${userId}`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (response.ok) {
+                const { imageUrl } = await response.json();
+                setUser((prev) => ({ ...prev, image: imageUrl }));
+            } else {
+                console.error('Błąd przesyłania zdjęcia profilowego.');
+            }
+        } catch (err) {
+            console.error('Błąd:', err);
+        }
+    };
+
+    const triggerFileInput = () => {
+        document.getElementById('file-upload').click();
     };
 
     if (loading) return <p>Ładowanie...</p>;
@@ -76,20 +103,21 @@ function Profile() {
         <div className="mainprofile">
             <div className="profile-header">
                 <img
-                    src={user.photo || "https://placehold.jp/005f63/ffffff/120x120.png"}
+                    src={user.image || '/default-profile.png'}
                     alt="Zdjęcie profilowe"
                     className="profile-image"
                 />
                 <div className="profile-actions">
-                    <span className={`status ${user.isActive ? "" : "inactive"}`}>
-                        {user.isActive ? "Aktywny" : "Nie aktywny"}
+                    <span className={`status ${user.isActive ? '' : 'inactive'}`}>
+                        {user.isActive ? 'Aktywny' : 'Nie aktywny'}
                     </span>
+
                     <button className="inputButtonProfile">Wyślij wiadomość</button>
                 </div>
             </div>
 
             <div className="profile-content">
-                <p className="email">{user.email}</p>
+                <p className="email">{user.imie + " " + user.nazwisko}</p>
                 <p>{user.id}</p>
                 <div className="email-line"></div>
                 <p className="title">O mnie:</p>
@@ -100,22 +128,42 @@ function Profile() {
                         className="edit-textarea"
                     />
                 ) : (
-                    <p>{user.opis || "Brak opisu."}</p>
+                    <p>{user.opis || 'Brak opisu.'}</p>
                 )}
                 <div className="edit-actions">
                     {isOwnProfile ? (
                         <>
                             {isEditing ? (
                                 <>
-                                    <button onClick={saveOpis} className="save-button">Zapisz</button>
-                                    <button onClick={toggleEditMode} className="cancel-button">Anuluj</button>
+                                    <button onClick={saveOpis} className="save-button">
+                                        Zapisz
+                                    </button>
+                                    <button onClick={toggleEditMode} className="cancel-button">
+                                        Anuluj
+                                    </button>
                                 </>
                             ) : (
-                                <button onClick={toggleEditMode} className="edit-button">Edytuj opis</button>
+                                <button onClick={toggleEditMode} className="edit-button">
+                                    Edytuj opis
+                                </button>
                             )}
                         </>
                     ) : (
                         <p></p>
+                    )}
+                    {isOwnProfile && (
+                        <>
+                            <button onClick={triggerFileInput} className="edit-button">
+                                Zmień zdjęcie
+                            </button>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                id="file-upload"
+                                style={{ display: 'none' }}
+                                onChange={handleImageUpload}
+                            />
+                        </>
                     )}
                 </div>
             </div>

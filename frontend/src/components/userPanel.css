@@ -12,6 +12,7 @@
     transition: transform 0.3s ease-in-out, opacity 0.3s ease; /* Smooth transition for pop-in effect */
     max-width: 300px; /* Dynamically set width based on content (email length) */
     min-width: 200px;
+    font-family: "Langar";
 }
 
 .userr-panel.show {

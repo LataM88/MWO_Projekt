@@ -1,35 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './chat.css';
 
 function Chat() {
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState({});
-    const [users] = useState([
-        { email: 'user1@example.com', status: 'online', image: 'user1.jpg' },
-        { email: 'user2@example.com', status: 'offline', image: 'user2.jpg' },
-        { email: 'user3@example.com', status: 'online', image: 'user3.jpg' },
-    ]);
+    const [users, setUsers] = useState([]);
+    const [filteredUsers, setFilteredUsers] = useState([]);
+    const [activeUser, setActiveUser] = useState(null);
 
-    const [registeredUsers] = useState([
-        'user1@example.com',
-        'user2@example.com',
-        'user3@example.com'
-    ]);
+    // Pobieranie danych użytkowników z API
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const response = await fetch('http://localhost:3080/api/users');
+                if (response.ok) {
+                    const data = await response.json();
+                    setUsers(data);
+                    setFilteredUsers(data); // Domyślnie filtr pokazuje wszystkich
+                    setActiveUser(data[0] || null); // Ustaw pierwszego użytkownika jako aktywnego
+                } else {
+                    console.error('Failed to fetch users:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+        };
 
-    const [filteredUsers, setFilteredUsers] = useState(users.filter(user => registeredUsers.includes(user.email)));
-    const [activeUser, setActiveUser] = useState(filteredUsers[0] || {});
+        fetchUsers();
+    }, []);
 
     const handleSendMessage = () => {
-        if (message) {
+        if (message && activeUser) {
             const newMessage = {
                 text: message,
-                sender: 'user3@example.com',
+                sender: 'current_user@example.com', // Zamień na email zalogowanego użytkownika
                 time: new Date().toLocaleTimeString().slice(0, 5),
             };
 
             setMessages((prevMessages) => ({
                 ...prevMessages,
-                [activeUser.email]: [...(prevMessages[activeUser.email] || []), newMessage]
+                [activeUser.email]: [...(prevMessages[activeUser.email] || []), newMessage],
             }));
 
             setMessage('');
@@ -39,7 +49,7 @@ function Chat() {
     const handleSearch = (e) => {
         const query = e.target.value.toLowerCase();
         setFilteredUsers(users.filter(user =>
-            registeredUsers.includes(user.email) && user.email.toLowerCase().includes(query)
+            user.email.toLowerCase().includes(query)
         ));
     };
 
@@ -66,7 +76,7 @@ function Chat() {
                         >
                             <img src={user.image} alt={user.email} className="user-image" />
                             <div className="user-info">
-                                <span>{user.email}</span>
+                                <span>{user.imie + " " + user.nazwisko}</span>
                                 <span className={`status ${user.status}`}>{user.status === 'online' ? 'Dostępny' : 'Niedostępny'}</span>
                             </div>
                         </div>
@@ -76,37 +86,45 @@ function Chat() {
 
             {/* Right section - Chat with active user */}
             <div className="chat-box">
-                <div className="chat-header">
-                    <h2>
-                        <img src={activeUser.image} alt={activeUser.email} className="ikona-small-header" />
-                        Czatujesz z {activeUser.email}
-                    </h2>
-                    <span className="status">{activeUser.status === 'online' ? 'Dostępny' : 'Niedostępny'}</span>
-                </div>
-
-                <div className="messages">
-                    {messages[activeUser.email]?.map((msg, index) => (
-                        <div key={index} className={`message ${msg.sender === activeUser.email ? 'sent' : 'received'}`}>
-                            <div className="ikona-message">
-                                <img src={activeUser.image} alt={activeUser.email} className="ikona" />
-                            </div>
-                            <div className="message-text">
-                                {msg.text}
-                            </div>
-                            <div className="message-time">{msg.time}</div>
+                {activeUser ? (
+                    <>
+                        <div className="chat-header">
+                            <h2>
+                                <img src={activeUser.image} alt={activeUser.email} className="user-image-onscreen" />
+                                Czatujesz z {activeUser.imie + " " + activeUser.nazwisko}
+                            </h2>
+                            <span className="status">{activeUser.status === 'online' ? 'Dostępny' : 'Niedostępny'}</span>
                         </div>
-                    ))}
-                </div>
 
-                <div className="input-area">
-                    <input
-                        type="text"
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        placeholder="Wpisz swoją wiadomość"
-                    />
-                    <button onClick={handleSendMessage}>Wyślij</button>
-                </div>
+                        <div className="messages">
+                            {messages[activeUser.email]?.map((msg, index) => (
+                                <div key={index} className={`message ${msg.sender === activeUser.email ? 'sent' : 'received'}`}>
+                                    <div className="ikona-message">
+                                        <img src={activeUser.image || 'default-avatar.jpg'} alt={activeUser.email} className="ikona" />
+                                    </div>
+                                    <div className="message-text">
+                                        {msg.text}
+                                    </div>
+                                    <div className="message-time">{msg.time}</div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="input-area">
+                            <input
+                                type="text"
+                                value={message}
+                                onChange={(e) => setMessage(e.target.value)}
+                                placeholder="Wpisz swoją wiadomość"
+                            />
+                            <button onClick={handleSendMessage}>Wyślij</button>
+                        </div>
+                    </>
+                ) : (
+                    <div className="no-active-user">
+                        <p>Wybierz użytkownika, aby rozpocząć czat.</p>
+                    </div>
+                )}
             </div>
         </div>
     );
