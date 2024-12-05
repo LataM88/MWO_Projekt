@@ -10,7 +10,8 @@ import Chat from './chat';
 import ForgotPassword from './zapomnialesHasla';
 import Activate from './activate';
 import ProtectedRoute from './components/ProtectedRoute';
-import GuestRoute from './components/GuestRoute';
+import GuestRoute from "./components/GuestRoute";
+import PostBoard from './PostBoard';
 
 import './App.css';
 
@@ -57,6 +58,7 @@ const extendSession = () => {
 function AppContent() {
     const [loggedIn, setLoggedIn] = useState(false);
     const [email, setEmail] = useState("");
+
     const [loading, setLoading] = useState(true); // Loading state
     const location = useLocation();
     const navigate = useNavigate();
@@ -134,7 +136,8 @@ function AppContent() {
                 <Route path="/login" element={<GuestRoute loggedIn={loggedIn}><Login setLoggedIn={setLoggedIn} setEmail={setEmail} /></GuestRoute>} />
                 <Route path="/register" element={<GuestRoute loggedIn={loggedIn}><Register /></GuestRoute>} />
                 <Route path="/zapomnialesHasla" element={<GuestRoute loggedIn={loggedIn}><ForgotPassword /></GuestRoute>} />
-                <Route path="/chat" element={<ProtectedRoute loggedIn={loggedIn}><Chat /></ProtectedRoute>} />
+                <Route path="/chat/:userId" element={<ProtectedRoute loggedIn={loggedIn}><Chat /></ProtectedRoute>} />
+                <Route path="/postboard" element={<ProtectedRoute loggedIn={loggedIn}><PostBoard /></ProtectedRoute>} />
             </Routes>
         </div>
     );

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './navbar.css';
-import UserPanel from "./UserPanel";
 
 const Navbar = ({ setLoggedIn, setEmail }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -44,7 +43,7 @@ const Navbar = ({ setLoggedIn, setEmail }) => {
                     <span className="line">Główna</span>
                 </Link>
             </div>
-            <div className="kontrolki"><UserPanel/></div>
+
             <div className="clock">{time}</div>
             <ul className="nav-links">
                 <li className="dropdown" onMouseEnter={toggleDropdown} onMouseLeave={toggleDropdown}>

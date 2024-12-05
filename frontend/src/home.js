@@ -17,6 +17,9 @@ const Home = (props) => {
             navigate("/login")
         }
     }
+    const storedData = localStorage.getItem("user");
+    const userData = storedData ? JSON.parse(storedData) : null;
+    const loggedInUserEmail = userData ? userData.email : null;
 
     const onButtonClickReg = () => {
         navigate("/register")
@@ -24,7 +27,14 @@ const Home = (props) => {
 
     // Funkcja przenosząca do strony chat.js
     const onGoToChat = () => {
-        navigate("/chat");  // Zakładając, że masz trasę /chat w routerze
+        if (loggedIn) {
+            navigate(`/chat/${email}`); // Pass logged-in user's email to the chat route
+        }
+    }
+
+    // Funkcja przenosząca do strony chat.js
+    const onGoToPost = () => {
+        navigate("/PostBoard");  // Zakładając, że masz trasę /chat w routerze
     }
 
     return (
@@ -60,12 +70,21 @@ const Home = (props) => {
                                 value={"Przejdź do czatu"}
                             />
                         )}
+                        {/* Przycisk przenoszący do czatu, jeśli użytkownik jest zalogowany */}
+                        {loggedIn && (
+                            <input
+                                className={"inputButtonHome"}
+                                type="button"
+                                onClick={onGoToPost}
+                                value={"Przejdź do post"}
+                            />
+                        )}
 
                         <input
                             className={"inputButtonHome"}
                             type="button"
                             onClick={onButtonClick}
-                            value={loggedIn ? "Wyloguj" : "Zaloguj"} />
+                            value={loggedIn ? "Wyloguj" : "Zaloguj"}/>
 
                         {loggedIn && (
                             <div>
@@ -79,7 +98,8 @@ const Home = (props) => {
                             <i className="icon-twitter icon"></i>
                         </div>
 
-                        <p>obserwuj</p>
+                        <p className="black-text">obserwuj</p>
+
 
                     </div>
                 </div>

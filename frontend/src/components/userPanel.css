@@ -1,126 +1,213 @@
-/* Main User Panel */
-.userr-panel {
-    position: absolute;
-    background-color: rgba(21, 72, 75, 0.85); /* Lighter green background with reduced opacity */
-    border-radius: 12px; /* Rounded corners for panel */
+/* User Panel Block */
+.user-panel-block {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 250px;
+    background-color: rgba(21, 72, 75, 0.9);
+    color: white;
     padding: 20px;
-    display: none;
-    flex-direction: column;
-    align-items: flex-start;
-    border: 1px solid #ccc;
-    z-index: 999; /* Ensure the panel appears above other content */
-    transition: transform 0.3s ease-in-out, opacity 0.3s ease; /* Smooth transition for pop-in effect */
-    max-width: 300px; /* Dynamically set width based on content (email length) */
-    min-width: 200px;
-    font-family: "Langar";
+    font-family: "Langar", cursive;
+    box-shadow: 4px 0 6px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+    overflow-y: auto;
+    overflow-x: visible; /* Ensure horizontal overflow is visible */
+    position: relative;
 }
 
-.userr-panel.show {
+/* Panel Title */
+.user-panel-title {
+    font-size: 22px;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #fff;
+}
+
+/* Search Box */
+.user-panel-search-box {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white; /* Ensure the default text is white */
+}
+.user-panel-search-box::placeholder{
+    color: white;
+}
+
+/* Tabs */
+.tabs {
     display: flex;
-    transform: translateY(0); /* Smoothly slide in */
-    opacity: 1; /* Make the panel fully visible */
+    justify-content: space-between;
+    margin-bottom: 15px;
 }
 
-.userr-panel.hide {
-    display: none;
-    opacity: 0;
-    transform: translateY(-20px); /* Smooth slide-out effect */
+.tabs button {
+    background-color: transparent;
+    border: 1px solid #fff;
+    color: white;
+    padding: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    text-align: center;
+    width: 100%; /* Make buttons take up full width */
+    font-family: "Langar", cursive; /* Set the font to Langar */
+}
+
+.tabs button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.tabs button.selected {
+    background-color: rgba(30, 100, 105, 1);
+    font-weight: bold;
 }
 
 /* User List Styles */
-.userr-list {
+.user-panel-list {
     list-style-type: none;
     padding: 0;
     margin: 0;
-    width: 100%;
-    background-color: rgba(21, 72, 75, 0.85); /* Lighter green background for the list */
-    border-radius: 8px; /* Rounded corners for the user list */
-    color: white; /* White text color for the list items */
-    overflow-y: auto; /* Enable vertical scrolling */
-    max-height: 300px; /* Limit the height of the list */
-    padding-right: 10px; /* Add space to the right to avoid cutting off the text */
-    scrollbar-width: none; /* Hide scrollbar for Firefox */
+    overflow-y: show;
 }
 
-.userr-list::-webkit-scrollbar {
-    display: none; /* Hide scrollbar for Webkit browsers (Chrome, Safari) */
+/* Invisible scrollbar for WebKit browsers */
+.user-panel-list::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
 }
 
-.userr-list li {
-    padding: 12px 20px; /* Add padding to make the items more clickable */
-    cursor: pointer;
-    font-size: 16px;
-    width: 100%;
-    border-radius: 8px;
-    margin-bottom: 8px; /* Space between list items */
-    transition: background-color 0.3s ease, padding-left 0.2s ease; /* Smooth transition for hover */
-    word-wrap: break-word; /* Ensure emails break onto the next line if needed */
-}
-
-/* Hover Effect for List Items */
-.userr-list li:hover {
-    background-color: rgba(25, 88, 93, 0.8); /* Slightly lighter and less intense green for hover */
-    padding-left: 15px; /* Slight slide effect on hover */
-}
-
-/* Button to show/hide the user panel */
-.userr-panel-button {
-    display: inline-flex; /* Use inline-flex so the button fits around the icon */
+.user-panel-item {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 5px; /* Slight padding to make the button just bigger than the icon */
+    text-align: left;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
     cursor: pointer;
-    background-color: rgba(21, 72, 75, 0.85); /* Lighter green background for button */
-    color: white;
-    border-radius: 25px; /* Rounded corners for the button */
-    border: none;
+    background-color: rgba(25, 88, 93, 0.8);
     transition: background-color 0.3s;
-    width: 50px; /* Set button width slightly bigger than the icon */
-    height: 50px; /* Set button height to match the icon size + padding */
+    position: relative;
+    width: 100%; /* Ensures the entire item takes up available space */
+    overflow: visible; /* Allow the dropdown to overflow outside of the item */
 }
 
-/* Ensure the button size matches the icon's size */
-.userr-panel-button img {
-    width: 80%; /* Slightly smaller than button size, fits within the button */
-    height: auto; /* Maintain the aspect ratio of the icon */
+.user-panel-item:hover {
+    background-color: rgba(30, 98, 104, 0.8);
 }
 
-/* Hover Effect for the Button */
-.userr-panel-button:hover {
-    background-color: rgba(25, 88, 93, 0.8); /* Lighter hover effect for button */
+/* Status Indicator */
+.user-panel-status {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 10px;
 }
 
-.userr-panel-button:focus {
-    outline: none; /* Remove outline on focus */
+.user-panel-status.online {
+    background-color: green;
 }
 
-/* Optional: Animation for smooth fade-in */
-@keyframes fadeIn {
-    0% { opacity: 0; }
-    100% { opacity: 1; }
+.user-panel-status.offline {
+    background-color: red;
 }
 
-.userr-panel.show {
-    animation: fadeIn 0.3s ease-in-out;
+/* Avatar */
+.user-panel-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 15px;
 }
 
-/* Styles for empty state when no users are found */
-.userr-list li.no-users {
+/* Name */
+.user-panel-name {
+    flex: 1;
+    font-size: 16px;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-options-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%; /* Default position below the user item */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(25, 88, 93, 0.95); /* More solid background for better clarity */
+    border-radius: 8px;
+    padding: 12px; /* More space for the content */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Stronger shadow for clearer separation */
+    z-index: 1000; /* Ensure the dropdown is above other elements */
+    width: 180px; /* Fixed dropdown width */
+    max-height: 250px; /* Limit the max-height */
+    overflow-y: auto; /* Scroll if content overflows */
+    font-family: 'Langar', cursive; /* Ensure Langar font is applied */
+    color: #fff; /* Light text for high contrast */
+    opacity: 0.95; /* Slight opacity to make it visually distinct */
+}
+
+/* Ensure buttons in the dropdown also use Langar font */
+.user-options-button {
+    font-family: 'Langar', cursive; /* Apply Langar font */
+    width: 100%;
+    padding: 10px; /* Slightly larger button for ease of clicking */
+    border: none;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.15); /* Slightly darker background for better clarity */
+    color: #fff; /* White text for better contrast */
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.3s, color 0.3s; /* Smooth hover effect */
+    font-size: 14px; /* Make text legible */
+}
+
+/* Ensure any other text inside the dropdown uses Langar font */
+.user-options-dropdown * {
+    font-family: 'Langar', cursive; /* Apply Langar font universally inside dropdown */
+}
+
+.user-panel-item:hover .user-options-dropdown {
+    display: block;
+}
+
+/* Adjust dropdown position when near the bottom or top */
+.user-panel-item.dropdown-up .user-options-dropdown {
+    top: auto;
+    bottom: 100%; /* Show the dropdown above */
+    transform: translateX(-50%) translateY(-10px); /* Slight offset for better visibility */
+}
+
+/* Dropdown button styles */
+.user-options-button {
+    width: 100%;
+    padding: 10px; /* Slightly larger button for ease of clicking */
+    border: none;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.15); /* Slightly darker background for better clarity */
+    color: #fff; /* White text for better contrast */
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.3s, color 0.3s; /* Smooth hover effect */
+    font-size: 14px; /* Make text legible */
+}
+
+.user-options-button:hover {
+    background-color: rgba(0, 0, 0, 0.2); /* Darken button slightly on hover */
+    color: #fff; /* Ensure the text remains white on hover */
+}
+
+.user-panel-no-users {
     text-align: center;
-    color: #888;
-    font-style: italic;
-}
-
-/* Keep button color changed until the panel is closed */
-.userr-panel.show .user-panel-button {
-    background-color: rgba(25, 88, 93, 0.9); /* Darker green when panel is open */
-}
-
-/* Revert the button color to the original when the panel is closed */
-.userr-panel.hide .user-panel-button {
-    background-color: rgba(21, 72, 75, 0.85); /* Original lighter green */
-}
-
-.white-image {
-    filter: brightness(0) invert(1);
+    color: white;
+    font-size: 16px;
+    margin-top: 20px;
 }

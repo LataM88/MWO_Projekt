@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import './chat.css';
 
 function Chat() {
+    const { userId } = useParams(); // Get userId from the URL
+    const navigate = useNavigate();
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
     const [users, setUsers] = useState([]);
@@ -11,12 +14,32 @@ function Chat() {
 
     useEffect(() => {
         const fetchUsers = async () => {
-            const response = await fetch('http://localhost:3080/api/users');
-            const data = await response.json();
-            setUsers(data);
-            setFilteredUsers(data);
-            setActiveUser(data[0]);
+            //const response = await fetch('http://localhost:3080/api/users');
+            //const data = await response.json();
+            //setUsers(data);
+            //setFilteredUsers(data);
+            //setActiveUser(data[0]);
+            try {
+                const response = await fetch('http://localhost:3080/api/users');
+                if (response.ok) {
+                    const data = await response.json();
+                    setUsers(data);
+
+                    // Find the user with the given userId from the URL
+                    const selectedUser = data.find(user => user.id === parseInt(userId));
+                    if (selectedUser) {
+                        setActiveUser(selectedUser);
+                    } else {
+                        setActiveUser(null);
+                    }
+                } else {
+                    console.error('Failed to fetch users:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
         };
+
         fetchUsers();
     }, []);
 
@@ -80,7 +103,7 @@ function Chat() {
                     />
                 </div>
                 <div className="users">
-                    {filteredUsers.map((user, index) => (
+                    {(filteredUsers.length > 0 ? filteredUsers : users).map((user, index) => (
                         <div
                             key={index}
                             className="user"
@@ -96,6 +119,7 @@ function Chat() {
                 </div>
             </div>
 
+            {/* Right section - Chat with active user */}
             <div className="chat-box">
                 {activeUser ? (
                     <>

@@ -76,3 +76,7 @@ html, body{
     align-items: center; /* Wyśrodkowanie ikonek w pionie */
     margin: 20px 0; /* Odstępy od góry i dołu */
 }
+
+.black-text {
+    color: black; /* Kolor tekstu ustawiony na czarny */
+}
