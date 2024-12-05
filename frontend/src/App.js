@@ -29,9 +29,10 @@ const extendSession = () => {
     const user = JSON.parse(localStorage.getItem('user'));
     if (user && user.token) {
         const remainingTime = getRemainingTime(user.token);
-
-        // Odnów sesję tylko, jeśli pozostało 15 minut lub mniej
-        if (remainingTime <= -1) {
+        if (remainingTime <= 0) {
+            // Token wygasł, usuwamy go z localStorage i przekierowujemy na stronę główną
+            localStorage.removeItem('user');
+        } else if (remainingTime <= 900) {
             fetch('http://localhost:3080/refresh-token', {
                 method: 'POST',
                 headers: {
