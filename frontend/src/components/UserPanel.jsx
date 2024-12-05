@@ -57,7 +57,7 @@ const UserPanel = () => {
                     ) : (
                         users.map((user) => (
                             <li key={user.id} onClick={() => handleUserClick(user.id)}>
-                                {user.email} {/* Wyświetlanie emaila, ale przekazywanie id */}
+                                {user.imie + " " + user.nazwisko} {/* Wyświetlanie imie, nazwisko, ale przekazywanie id */}
                             </li>
                         ))
                     )}
