@@ -573,6 +573,52 @@ app.post('/refresh-token', (req, res) => {
     });
 });
 
+app.post('/messages', async (req, res) => {
+    const { senderId, receiverId, content } = req.body;
+
+    try {
+        const { data, error } = await supabase
+            .from('messages')
+            .insert([{ sender_id: senderId, receiver_id: receiverId, content }]);
+
+        if (error) {
+            console.error('Error inserting message:', error.message); // Dodatkowa informacja o błędzie
+            return res.status(500).json({ message: 'Error inserting message', error: error.message });
+        }
+
+        res.status(201).json({ message: 'Message sent successfully', data });
+    } catch (err) {
+        console.error('Unexpected error:', err);
+        res.status(500).json({ message: 'Unexpected error', error: err });
+    }
+});
+
+app.get('/messages/:userId/:receiverId', async (req, res) => {
+    let { userId, receiverId } = req.params;
+
+    // Konwersja userId i receiverId na liczby
+    userId = parseInt(userId, 10);  // Konwersja na liczbę
+    receiverId = parseInt(receiverId, 10);  // Konwersja na liczbę
+
+    try {
+        const { data, error } = await supabase
+            .from('messages')
+            .select('*')
+            .in('sender_id', [userId, receiverId])
+            .in('receiver_id', [userId, receiverId]);
+
+        if (error) {
+            console.error('Error fetching messages:', error);
+            return res.status(500).json({ message: 'Error fetching messages', error });
+        }
+
+        res.status(200).json({ messages: data });
+    } catch (err) {
+        console.error('Unexpected error:', err);
+        res.status(500).json({ message: 'Unexpected error', error: err });
+    }
+});
+
 // Starting server
 app.listen(3080, () => {
     console.log('Server started on port 3080');
