@@ -84,7 +84,6 @@ const Login = (props) => {
             if (data.message === 'success') {
                 localStorage.setItem("user", JSON.stringify({
                     email,
-                    token: data.token,
                     userId: data.userId // Zapisujemy userId
                 }));
                 // After successful login, trigger 2FA step if necessary
@@ -122,6 +121,14 @@ const Login = (props) => {
         .then(response => response.json())
         .then(data => {
             if (data.message === 'Weryfikacja pomyślna') {
+                const existingUser = JSON.parse(localStorage.getItem("user")) || {};
+
+                const updatedUser = {
+                    ...existingUser,
+                    token: data.token,
+                };
+                localStorage.setItem("user", JSON.stringify(updatedUser));
+
                 props.setLoggedIn(true);
                 navigate("/"); // Redirect to homepage or desired page
             } else {
