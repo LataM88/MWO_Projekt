@@ -10,30 +10,30 @@ const Activate = () => {
     const [message, setMessage] = useState(''); // Przechowuje wiadomość z odpowiedzi
     const [loading, setLoading] = useState(true); // Dodano stan ładowania
 
-    useEffect(() => {
-        const status = searchParams.get('status');
-        const email = searchParams.get('email');
+useEffect(() => {
+    const status = searchParams.get('status');
+    const imie = searchParams.get('imie');
+    const nazwisko = searchParams.get('nazwisko');
 
-        if (!status || !email) {
-            setMessage('Brak wymaganych parametrów aktywacyjnych w URL.');
-            setActivationStatus('error');
-            setLoading(false); // Ustawiamy loading na false
-            return;
-        }
+    if (!status || !imie || !nazwisko) {
+        setMessage('Brak wymaganych parametrów aktywacyjnych w URL.');
+        setActivationStatus('error');
+        setLoading(false);
+        return;
+    }
 
-        // Jeżeli status jest 'success', oznacza to pomyślną aktywację
-        if (status === 'success') {
-            setActivationStatus('success');
-            setMessage(`Konto ${email} zostało aktywowane pomyślnie! Możesz teraz zalogować się.`);
-        } else {
-            setActivationStatus('error');
-            setMessage('Wystąpił problem z aktywacją konta. Spróbuj ponownie.');
-        }
+    if (status === 'success') {
+        setActivationStatus('success');
+        setMessage(`Konto ${imie} ${nazwisko} zostało aktywowane pomyślnie! Możesz teraz zalogować się.`);
+    } else {
+        setActivationStatus('error');
+        setMessage('Wystąpił problem z aktywacją konta. Spróbuj ponownie.');
+    }
 
-        setLoading(false); // Ustawiamy loading na false po zakończeniu przetwarzania
-    }, [searchParams]);
+    setLoading(false);
+}, [searchParams]);
 
-    // Wyświetlenie różnych komunikatów w zależności od statusu
+
     return (
         <div className="activation-container">
             <div className="activation-content">
@@ -46,7 +46,7 @@ const Activate = () => {
                             <p className="login-prompt">Konto zostało aktywowane. Kliknij poniżej, aby przejść do logowania.</p>
                             <button
                                 className="login-button"
-                                onClick={() => navigate('/login')} // Przekierowanie na stronę logowania
+                                onClick={() => navigate('/login')}
                             >
                                 Przejdź do logowania
                             </button>
