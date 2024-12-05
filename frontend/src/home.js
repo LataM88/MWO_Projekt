@@ -32,6 +32,11 @@ const Home = (props) => {
         }
     }
 
+    // Funkcja przenosząca do strony chat.js
+    const onGoToPost = () => {
+        navigate("/PostBoard");  // Zakładając, że masz trasę /chat w routerze
+    }
+
     return (
         <div className="mainContainer" id="mainContainerHome">
             <div className={"mainBoxHome"}>
@@ -65,12 +70,21 @@ const Home = (props) => {
                                 value={"Przejdź do czatu"}
                             />
                         )}
+                        {/* Przycisk przenoszący do czatu, jeśli użytkownik jest zalogowany */}
+                        {loggedIn && (
+                            <input
+                                className={"inputButtonHome"}
+                                type="button"
+                                onClick={onGoToPost}
+                                value={"Przejdź do post"}
+                            />
+                        )}
 
                         <input
                             className={"inputButtonHome"}
                             type="button"
                             onClick={onButtonClick}
-                            value={loggedIn ? "Wyloguj" : "Zaloguj"} />
+                            value={loggedIn ? "Wyloguj" : "Zaloguj"}/>
 
                         {loggedIn && (
                             <div>
@@ -84,7 +98,8 @@ const Home = (props) => {
                             <i className="icon-twitter icon"></i>
                         </div>
 
-                        <p>obserwuj</p>
+                        <p className="black-text">obserwuj</p>
+
 
                     </div>
                 </div>

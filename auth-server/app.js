@@ -187,8 +187,7 @@ app.post('/verify-2fa', async (req, res) => {
     }
 
     // Generowanie tokenu JWT
-    //date now milisekundy, potrzebuje sekund na weryfikację tokenu stąd /1000
-    const loginData = { userId, exp: Date.now()/1000 + 1800 };
+    const loginData = { userId, signInTime: Date.now() };
     const token = jwt.sign(loginData, jwtSecretKey);
 
     res.status(200).json({ message: 'Weryfikacja pomyślna', token });
@@ -571,6 +570,126 @@ app.post('/refresh-token', (req, res) => {
         console.log('To log z odnawiania tokenu')
     });
 });
+
+app.get('/api/user', async (req, res) => {
+    const token = req.headers['authorization']?.split(' ')[1]; // Pobierz token z nagłówka
+
+    if (!token) {
+        return res.status(401).json({ error: 'Brak tokenu' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET); // Weryfikacja tokenu
+        const userId = decoded.id;
+
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        if (error || !user) {
+            return res.status(404).json({ error: 'Nie znaleziono użytkownika' });
+        }
+
+        res.json(user); // Zwróć dane użytkownika
+    } catch (err) {
+        console.error('Błąd weryfikacji tokenu:', err);
+        res.status(500).json({ error: 'Błąd serwera' });
+    }
+});
+
+// Endpoint do pobierania postów
+app.get('/api/posts', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('posts')
+            .select(`
+        id,
+        content,
+        created_at,
+        users:users (
+            email,
+            imie,
+            nazwisko,
+            image
+        )
+    `)
+            .order('created_at', { ascending: false });
+        console.log('Pobrane dane z Supabase:', data);
+        if (error) {
+            console.log('Błąd podczas pobierania postów:', error);
+            return res.status(500).json({ error: 'Błąd pobierania postów' });
+        }
+
+        console.log('Pobrane dane z Supabase:', data);
+
+        const posts = data.map(post => ({
+            id: post.id,
+            content: post.content,
+            created_at: post.created_at,
+            user: post.users ? {
+                email: post.users.email || 'Nieznany użytkownik',
+                imie: post.users.imie || 'Nieznane imię',
+                nazwisko: post.users.nazwisko || 'Nieznane nazwisko',
+                image: post.users.image || 'default-avatar.jpg',
+            } : null
+        }));
+
+        res.status(200).json(posts);
+    } catch (error) {
+        console.log('Błąd serwera:', error);
+        res.status(500).json({ error: 'Wewnętrzny błąd serwera' });
+    }
+});
+
+
+// Endpoint do dodawania postów
+app.post('/api/posts', async (req, res) => {
+    const { users_id, content } = req.body;
+
+    if (!users_id || !content) {
+        console.log('Brak wymaganych pól:', { users_id, content });
+        return res.status(400).json({ error: 'Brakuje wymaganych pól: users_id, content' });
+    }
+
+    try {
+        // Check if the user exists
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', users_id)
+            .single();
+
+        if (userError || !user) {
+            console.log('Nie znaleziono użytkownika:', userError || 'Brak użytkownika');
+            return res.status(404).json({ error: 'Nie znaleziono użytkownika' });
+        }
+
+        // Insert post
+        const { data: newPost, error: postError } = await supabase
+            .from('posts')
+            .insert([{
+                users_id,
+                content,
+                created_at: new Date().toISOString(),
+            }])
+            .select('*') // Ensure the returned data is selected
+            .single();
+
+        if (postError) {
+            console.log('Błąd dodawania posta:', postError);
+            return res.status(500).json({ error: 'Błąd zapisu posta do bazy danych' });
+        }
+
+        console.log('Zapisano post:', newPost);
+        res.status(201).json(newPost); // Return the saved post
+    } catch (error) {
+        console.error('Błąd serwera:', error);
+        res.status(500).json({ error: 'Wewnętrzny błąd serwera' });
+    }
+});
+
 
 // Starting server
 app.listen(3080, () => {
