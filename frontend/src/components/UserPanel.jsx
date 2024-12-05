@@ -63,23 +63,30 @@ const UserPanel = () => {
     }, [selectedTab, users, friends]);
 
     // Function to handle search query changes
+    // Function to handle search query changes
     const handleSearchChange = (e) => {
         const query = e.target.value.toLowerCase();
         setSearchQuery(query);
 
         // Filter based on the selected tab and search query
+        const filterUsers = (usersList) => {
+            return usersList.filter((user) => {
+                const fullName = `${user.imie} ${user.nazwisko}`.toLowerCase(); // Combine first and last name
+                const email = user.email.toLowerCase(); // User email
+                // Check if the search query is present in full name or email
+                return fullName.includes(query) || email.includes(query);
+            });
+        };
+
         if (selectedTab === "allUsers") {
-            const filtered = users.filter((user) =>
-                user.email.toLowerCase().includes(query)
-            );
+            const filtered = filterUsers(users);
             setFilteredUsers(filtered);
         } else {
-            const filtered = friends.filter((user) =>
-                user.email.toLowerCase().includes(query)
-            );
+            const filtered = filterUsers(friends);
             setFilteredUsers(filtered);
         }
     };
+
 
     // Navigate to chat with the selected user
     const handleChatClick = (userId, e) => {
