@@ -211,3 +211,17 @@
     font-size: 16px;
     margin-top: 20px;
 }
+.post-user-name {
+    color: black;
+}
+.post-user-email {
+    color: black;
+    margin-left: 10px; /* Dodaj przestrzeń po lewej stronie tekstu (od ikony) */
+}
+.post-header .user-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 15px;
+}

@@ -21,7 +21,7 @@
 .userpanel-container {
     margin: auto;
     margin-left:0px;
-    height: calc(100vh - 78px);
+    height: 100%;
     width: content; /* Fixed width for the sidebar */
     flex-shrink: 0; /* Prevents it from shrinking */
     position: absolute;
