@@ -190,7 +190,11 @@ app.post('/verify-2fa', async (req, res) => {
     }
 
     // Generowanie tokenu JWT
-    const loginData = { userId, signInTime: Date.now() };
+    const loginData = {
+        userId,
+        exp: Date.now() / 1000 + 1800,
+        signInTime: Date.now() / 1000
+    };
     const token = jwt.sign(loginData, jwtSecretKey);
 
     res.status(200).json({ message: 'Weryfikacja pomyślna', token });

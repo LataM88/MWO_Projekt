@@ -14,11 +14,6 @@ function Chat() {
 
     useEffect(() => {
         const fetchUsers = async () => {
-            //const response = await fetch('http://localhost:3080/api/users');
-            //const data = await response.json();
-            //setUsers(data);
-            //setFilteredUsers(data);
-            //setActiveUser(data[0]);
             try {
                 const response = await fetch('http://localhost:3080/api/users');
                 if (response.ok) {
