@@ -165,6 +165,38 @@ body {
     display: flex;
     margin-bottom: 15px;
     font-family: 'Langar', cursive;
+    justify-content: flex-start; /* Domyślnie wiadomości odbierane są po lewej */
+}
+
+.message.sent {
+    justify-content: flex-end; /* Wiadomości wysyłane są po prawej */
+}
+
+.message-text {
+    background-color: #e5e5e5;
+    color: black;
+    padding: 12px;
+    border-radius: 15px;
+    max-width: 70%;
+    word-wrap: break-word;
+    margin-bottom: 5px;
+    font-family: 'Langar', cursive;
+}
+
+.message-time {
+    font-size: 0.75rem;
+    color: gray;
+    font-family: 'Langar', cursive;
+}
+
+.message.sent .message-text {
+    background-color: #01C7CE; /* Kolor tła dla wiadomości wysyłanych */
+    color: white; /* Kolor tekstu dla wiadomości wysyłanych */
+}
+
+.message.received .message-text {
+    background-color: #e5e5e5; /* Kolor tła dla wiadomości otrzymanych */
+    color: black; /* Kolor tekstu dla wiadomości otrzymanych */
 }
 
 .ikona-message {

@@ -1,29 +1,52 @@
 import express from 'express';
+import http from 'http';
+import { WebSocketServer } from 'ws';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import { createClient } from '@supabase/supabase-js';
-//Profilowe
 import multer from 'multer';
 import sharp from 'sharp';
 
-
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Konfiguracja Supabase
 const supabaseUrl = 'https://qgjrvrjgmewqffywfxhh.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFnanJ2cmpnbWV3cWZmeXdmeGhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA4MTExMDMsImV4cCI6MjA0NjM4NzEwM30.hrnOev0tRUM9cUNugQu5BARLBrm3VbQS1VsCy4ZkMzM';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const app = express();
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
+
 const jwtSecretKey = 'dsfdsfsdfdsvcsvdfgefg'; // JWT secret key
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
+// WebSocket connection handler
+wss.on('connection', (ws) => {
+    console.log('Client connected');
+
+    // Listen for incoming messages from client
+    ws.on('message', (message) => {
+        console.log('Received message:', message);
+
+        // Broadcast the message to all clients except the sender
+        wss.clients.forEach(client => {
+            if (client !== ws && client.readyState === client.OPEN) {
+                client.send(JSON.stringify({ senderId, receiverId, content }));
+            }
+        });
+    });
+
+    // Handle client disconnection
+    ws.on('close', () => {
+        console.log('Client disconnected');
+    });
+});
 // Main API route
 app.get('/', (_req, res) => {
     res.send('Auth API.\nPlease use POST /auth & POST /register for authentication');
@@ -593,9 +616,16 @@ app.post('/messages', async (req, res) => {
             .insert([{ sender_id: senderId, receiver_id: receiverId, content }]);
 
         if (error) {
-            console.error('Error inserting message:', error.message); // Dodatkowa informacja o błędzie
+            console.error('Error inserting message:', error.message);
             return res.status(500).json({ message: 'Error inserting message', error: error.message });
         }
+
+        // Broadcast the message to the receiver using WebSocket
+        wss.clients.forEach(client => {
+            if (client.readyState === client.OPEN) {
+                client.send(JSON.stringify({ senderId, receiverId, content }));
+            }
+        });
 
         res.status(201).json({ message: 'Message sent successfully', data });
     } catch (err) {
@@ -751,6 +781,6 @@ app.post('/api/posts', async (req, res) => {
 
 
 // Starting server
-app.listen(3080, () => {
+server.listen(3080, () => {
     console.log('Server started on port 3080');
 });

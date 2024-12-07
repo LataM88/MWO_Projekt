@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './chat.css';
 
@@ -11,6 +11,9 @@ function Chat() {
     const [filteredUsers, setFilteredUsers] = useState([]);
     const [activeUser, setActiveUser] = useState(null);
     const currentUser = JSON.parse(localStorage.getItem('user')); // Pobieranie zalogowanego użytkownika
+
+    // WebSocket reference
+    const ws = useRef(null);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -40,7 +43,6 @@ function Chat() {
 
     useEffect(() => {
         if (activeUser) {
-            console.log(`Fetching messages for ${currentUser.userId} and ${activeUser.id}`); // Dodaj logowanie
             const fetchMessages = async () => {
                 const response = await fetch(`http://localhost:3080/messages/${currentUser.userId}/${activeUser.id}`);
                 const data = await response.json();
@@ -54,11 +56,45 @@ function Chat() {
         }
     }, [activeUser, currentUser.userId]);
 
+    // Open WebSocket connection when component is mounted
+    useEffect(() => {
+        // Połączenie WebSocket
+        ws.current = new WebSocket('ws://localhost:3080');
+
+        ws.current.onopen = () => {
+            console.log('WebSocket connected');
+        };
+
+        // Nasłuchiwanie wiadomości z WebSocket
+        ws.current.onmessage = (event) => {
+            const newMessage = JSON.parse(event.data);
+
+            // Sprawdzenie, czy wiadomość już istnieje w stanie
+            setMessages((prevMessages) => {
+                // Dodajemy nową wiadomość tylko wtedy, gdy jej nie ma jeszcze w liście
+                const messageExists = prevMessages.some(msg => msg.senderId === newMessage.senderId && msg.content === newMessage.content);
+                if (!messageExists) {
+                    return [...prevMessages, newMessage];
+                }
+                return prevMessages;
+            });
+        };
+
+
+        // Cleanup WebSocket po odmontowaniu komponentu
+        return () => {
+            if (ws.current) {
+                ws.current.close();
+            }
+        };
+    }, []);
+
+
     const handleSendMessage = async () => {
         if (message && activeUser) {
             const newMessage = {
-                senderId: currentUser.userId, // ID zalogowanego użytkownika
-                receiverId: activeUser.id,    // ID odbiorcy
+                senderId: currentUser.userId,
+                receiverId: activeUser.id,
                 content: message,
             };
 
@@ -71,8 +107,13 @@ function Chat() {
             });
 
             if (response.ok) {
-                // Zaktualizuj wiadomości po wysłaniu
-                setMessages(prevMessages => [...prevMessages, newMessage]);
+                // Dodaj wiadomość do stanu tylko jeśli jej tam jeszcze nie ma
+                setMessages(prevMessages => {
+                    if (!prevMessages.some(msg => msg.content === newMessage.content && msg.senderId === newMessage.senderId)) {
+                        return [...prevMessages, newMessage];
+                    }
+                    return prevMessages;
+                });
                 setMessage('');
             } else {
                 console.error('Failed to send message:', response.statusText);
@@ -114,7 +155,6 @@ function Chat() {
                 </div>
             </div>
 
-            {/* Right section - Chat with active user */}
             <div className="chat-box">
                 {activeUser ? (
                     <>
