@@ -68,6 +68,13 @@ function Chat() {
         // Nasłuchiwanie wiadomości z WebSocket
         ws.current.onmessage = (event) => {
             const newMessage = JSON.parse(event.data);
+            console.log(newMessage);  // Sprawdź całą wiadomość
+            console.log(newMessage.timestamp);  // Sprawdź tylko timestamp
+
+            // Jeśli brak timestampu, przypisz go
+            if (!newMessage.timestamp) {
+                newMessage.timestamp = new Date().toISOString();  // Możesz przypisać obecny czas, jeśli brakuje
+            }
 
             // Sprawdzenie, czy wiadomość już istnieje w stanie
             setMessages((prevMessages) => {
@@ -89,14 +96,32 @@ function Chat() {
         };
     }, []);
 
+    // Formatowanie czasu wiadomości
+    const formatTime = (timestamp) => {
+         const date = new Date(timestamp); // Tworzymy obiekt Date z timestampu
+         if (isNaN(date.getTime())) {
+             return "";  // Jeśli timestamp jest nieprawidłowy, zwróć pusty ciąg
+         }
+
+         // Używamy getUTCHours i getUTCMinutes do uzyskania godzin i minut
+         const hours = date.getHours().toString().padStart(2, '0');
+         const minutes = date.getMinutes().toString().padStart(2, '0');
+         return `${hours}:${minutes}`;  // Zwracamy godzinę w formacie "HH:MM"
+     };
+
 
     const handleSendMessage = async () => {
         if (message && activeUser) {
+            const timestamp = new Date().toISOString(); // Zapisz dokładny czas wysłania wiadomości
+
             const newMessage = {
                 senderId: currentUser.userId,
                 receiverId: activeUser.id,
                 content: message,
+                timestamp, // Dodajemy timestamp do wiadomości
             };
+
+            console.log(newMessage.timestamp);  // Sprawdź timestamp przed wysłaniem
 
             const response = await fetch('http://localhost:3080/messages', {
                 method: 'POST',
@@ -120,6 +145,7 @@ function Chat() {
             }
         }
     };
+
 
     const handleSearch = (e) => {
         const query = e.target.value.toLowerCase();
@@ -167,14 +193,25 @@ function Chat() {
                         </div>
 
                         <div className="messages">
-                            {messages.map((msg, index) => (
-                                <div key={index} className={`message ${msg.senderId === currentUser.userId ? 'sent' : 'received'}`}>
-                                    <div className="message-text">
-                                        {msg.content}
+                            {messages.map((msg, index) => {
+                            console.log(msg.timestamp);
+                                // Find the user who sent the message
+                                const sender = users.find(user => user.id === msg.senderId);
+
+                                return (
+                                    <div key={index} className={`message ${msg.senderId === currentUser.userId ? 'sent' : 'received'}`}>
+                                        {sender && (
+                                            <div className="message-sender">
+                                                <span className="sender-name">{sender.imie} {sender.nazwisko}</span>
+                                            </div>
+                                        )}
+                                        <div className="message-text">
+                                            {msg.content}
+                                        </div>
+                                        <div className="message-time">{formatTime(msg.timestamp)}</div>
                                     </div>
-                                    <div className="message-time">{new Date().toLocaleTimeString()}</div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
                         <div className="input-area">

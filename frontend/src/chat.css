@@ -163,13 +163,28 @@ body {
 
 .message {
     display: flex;
+    flex-direction: column; /* Ustawienie, że wiadomość to kolumna z imieniem/nazwiskiem i treścią */
     margin-bottom: 15px;
     font-family: 'Langar', cursive;
-    justify-content: flex-start; /* Domyślnie wiadomości odbierane są po lewej */
+    align-items: flex-start; /* Zachowanie domyślnego ustawienia wiadomości */
 }
 
 .message.sent {
-    justify-content: flex-end; /* Wiadomości wysyłane są po prawej */
+    align-items: flex-end; /* Wiadomości wysyłane przez użytkownika na prawo */
+}
+
+/* Stylowanie kontenera nadawcy wiadomości */
+.message-sender {
+    font-weight: bold;
+    color: white;
+    margin-bottom: 5px; /* Odstęp między imieniem a wiadomością */
+    font-family: 'Langar', cursive;
+    text-align: center; /* Wyśrodkowanie imienia i nazwiska */
+}
+/* Stylowanie samego imienia i nazwiska */
+.sender-name {
+    font-size: 0.9rem;
+    color: white;
 }
 
 .message-text {
@@ -194,10 +209,22 @@ body {
     color: white; /* Kolor tekstu dla wiadomości wysyłanych */
 }
 
-.message.received .message-text {
-    background-color: #e5e5e5; /* Kolor tła dla wiadomości otrzymanych */
-    color: black; /* Kolor tekstu dla wiadomości otrzymanych */
+.message.received {
+    align-items: flex-start; /* Wiadomości odbierane na lewo */
 }
+
+.message-text {
+    background-color: #e5e5e5;
+    color: black;
+    padding: 12px;
+    border-radius: 15px;
+    max-width: 70%;
+    word-wrap: break-word;
+    margin-bottom: 5px;
+    font-family: 'Langar', cursive;
+}
+
+
 
 .ikona-message {
     display: flex;
@@ -222,10 +249,12 @@ body {
     font-family: 'Langar', cursive;
 }
 
+/* Stylowanie czasu wiadomości */
 .message-time {
     font-size: 0.75rem;
-    color: gray;
+    color: gray;  /* Możesz zmienić ten kolor na coś bardziej kontrastowego, np. białe */
     font-family: 'Langar', cursive;
+    margin-top: 5px; /* Dodaj trochę marginesu, by nie nachodziło na tekst wiadomości */
 }
 
 /* Pole wprowadzania wiadomości */
