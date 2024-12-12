@@ -12,6 +12,7 @@ import Activate from './activate';
 import ProtectedRoute from './components/ProtectedRoute';
 import GuestRoute from "./components/GuestRoute";
 import PostBoard from './PostBoard';
+import ActivityMonitor from './components/ActivityMonitor';
 
 import './App.css';
 
@@ -129,6 +130,7 @@ function AppContent() {
     return (
         <div className="App">
             {loggedIn && <Navbar setLoggedIn={setLoggedIn} setEmail={setEmail} />}
+            {loggedIn && <ActivityMonitor/>}
             <Routes>
                 <Route path="/activate" element={<GuestRoute loggedIn={loggedIn}><Activate /></GuestRoute>} />
                 <Route path="/profile/:userId" element={<ProtectedRoute loggedIn={loggedIn}><Profile /></ProtectedRoute>} />

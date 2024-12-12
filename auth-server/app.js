@@ -879,6 +879,66 @@ app.post('/api/comments', async (req, res) => {
     }
 });
 
+// Endpoint do aktualizacji aktywności użytkownika
+app.post('/api/activity', async (req, res) => {
+    const { userId } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ message: 'Brakuje identyfikatora użytkownika.' });
+    }
+
+    try {
+        // Zapisz czas w UTC
+        const now = new Date().toISOString();
+        await supabase
+            .from('users')
+            .update({ last_active: now })
+            .eq('id', userId);
+
+        res.status(200).json({ message: 'Status użytkownika został zaktualizowany.' });
+    } catch (error) {
+        console.error('Błąd podczas aktualizacji aktywności użytkownika:', error);
+        res.status(500).json({ message: 'Błąd serwera.' });
+    }
+});
+
+app.get('/api/isonline/:userId', async (req, res) => {
+    const { userId } = req.params;
+
+    if (!userId) {
+        return res.status(400).json({ message: 'Brakuje identyfikatora użytkownika.' });
+    }
+
+    try {
+        // Fetch user data from the database
+        const { data, error } = await supabase
+            .from('users')
+            .select('last_active')
+            .eq('id', userId)
+            .single();
+
+        if (error) {
+            return res.status(500).json({ message: 'Błąd podczas pobierania danych.' });
+        }
+
+        // Get the current server time in UTC
+        const now = new Date().toISOString();
+        const lastActive = new Date(data.last_active).toISOString();
+
+        // Calculate the difference in seconds
+        const isOnline = (new Date(now) - new Date(lastActive)) / 1000 < 300; // Last active within the last 5 minutes
+
+        // Send the result as a response
+        res.status(200).json({ isOnline });
+    } catch (error) {
+        console.error('Błąd podczas sprawdzania statusu online użytkownika:', error);
+        res.status(500).json({ message: 'Błąd serwera.' });
+    }
+});
+
+
+
+
 
 // Starting server
 server.listen(3080, () => {
