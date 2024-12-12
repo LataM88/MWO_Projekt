@@ -5,21 +5,19 @@ import UserPanel from "./components/UserPanel.jsx";
 const PostBoard = () => {
     const [posts, setPosts] = useState([]);
     const [content, setContent] = useState('');
+    const [commentContent, setCommentContent] = useState(''); // Treść komentarza
     const [userEmail, setUserEmail] = useState('');
     const [userIcon, setUserIcon] = useState('default-avatar.jpg');
-    const [userId, setUserId] = useState(null); // Identyfikator użytkownika
+    const [userId, setUserId] = useState(null);
 
-    const API_URL = 'http://localhost:3080/api/posts'; // Adres API do pobierania i dodawania postów
+    const API_URL = 'http://localhost:3080/api/posts';
+    const COMMENTS_API_URL = 'http://localhost:3080/api/comments'; // Adres API do obsługi komentarzy
 
-    // Pobiera dane użytkownika z localStorage
     const fetchUserData = () => {
-        const userData = localStorage.getItem('user'); // Klucz "user" zawiera dane użytkownika
-
+        const userData = localStorage.getItem('user');
         if (userData) {
             try {
                 const parsedUserData = JSON.parse(userData);
-
-                // Założenie: obiekt zawiera email, userId i userIcon
                 setUserEmail(parsedUserData.email || 'default@example.com');
                 setUserId(parsedUserData.userId || 1);
                 setUserIcon(parsedUserData.userIcon || 'default-avatar.jpg');
@@ -31,26 +29,18 @@ const PostBoard = () => {
         }
     };
 
-    // Obsługuje wysyłanie nowego posta
     const handlePostSubmit = async (event) => {
         event.preventDefault();
-
         if (!content) {
             alert('Musisz wpisać treść posta!');
             return;
         }
 
-        const newPost = {
-            users_id: userId, // Identyfikator użytkownika
-            content,          // Treść posta
-        };
-
+        const newPost = { users_id: userId, content };
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newPost),
             });
 
@@ -60,26 +50,20 @@ const PostBoard = () => {
                 return;
             }
 
-            // Po zapisaniu posta, odśwież listę postów
             await fetchPosts();
-
-            setContent(''); // Resetowanie pola tekstowego
+            setContent('');
         } catch (error) {
             console.error('Błąd wysyłania żądania:', error);
             alert('Nie udało się zapisać posta.');
         }
     };
 
-
-    // Pobiera wszystkie posty z API
     const fetchPosts = async () => {
         try {
             const response = await fetch(API_URL);
             if (response.ok) {
                 const data = await response.json();
-                console.log("Otrzymane dane postów:", data); // Sprawdź dane w konsoli
-
-                setPosts(data); // Zapisz dane postów w stanie
+                setPosts(data);
             } else {
                 console.error('Błąd pobierania postów:', response.statusText);
             }
@@ -88,20 +72,45 @@ const PostBoard = () => {
         }
     };
 
+    const handleCommentSubmit = async (event, postId) => {
+        event.preventDefault();
+        if (!commentContent) {
+            alert('Treść komentarza nie może być pusta!');
+            return;
+        }
 
+        const newComment = { post_id: postId, user_id: userId, content: commentContent };
+
+        try {
+            const response = await fetch(COMMENTS_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newComment),
+            });
+
+            if (!response.ok) {
+                alert('Nie udało się dodać komentarza.');
+                return;
+            }
+
+            setCommentContent(''); // Reset pola komentarza
+            await fetchPosts(); // Odśwież listę postów z komentarzami
+        } catch (error) {
+            console.error('Błąd wysyłania żądania komentarza:', error);
+            alert('Nie udało się dodać komentarza.');
+        }
+    };
 
     useEffect(() => {
-        fetchUserData(); // Pobiera dane użytkownika
-        fetchPosts();    // Pobiera posty z API
-    }, []); // Wykonuje się raz przy renderowaniu komponentu
+        fetchUserData();
+        fetchPosts();
+    }, []);
 
     return (
         <div className="main-container">
-            <div className="userpanel-container"><UserPanel/></div>
+            <div className="userpanel-container"><UserPanel /></div>
             <div className="postboard-container-unique">
                 <h1>Tablica Postów</h1>
-
-                {/* Formularz do dodawania posta */}
                 <form className="postboard-form" onSubmit={handlePostSubmit}>
                     <textarea
                         className="postboard-textarea"
@@ -111,16 +120,14 @@ const PostBoard = () => {
                     ></textarea>
                     <button className="postboard-button" type="submit">Dodaj post</button>
                 </form>
-
-                {/* Wyświetlanie listy postów */}
                 <div>
                     <h2>Wszystkie posty:</h2>
                     {posts.length === 0 ? (
                         <p className="black-text3">Brak postów na tablicy!</p>
                     ) : (
                         <ul className="postboard-posts-list">
-                            {posts.map((post, index) => (
-                                <li key={post.id || index} className="postboard-post-item">
+                            {posts.map((post) => (
+                                <li key={post.id} className="postboard-post-item">
                                     <div className="post-header">
                                         <img
                                             src={post.user?.image || 'default-avatar.jpg'}
@@ -128,17 +135,45 @@ const PostBoard = () => {
                                             className="user-icon"
                                         />
                                         <div className="user-info">
-                        <span className="post-user-name">
-                            {post.user?.imie || 'Nieznane imię'} {post.user?.nazwisko || 'Nieznane nazwisko'}
-                        </span>
-                                            <span
-                                                className="post-user-email">({post.user?.email || 'Nieznany email'})</span>
+                                            <span className="post-user-name">
+                                                {post.user?.imie || 'Nieznane imię'} {post.user?.nazwisko || 'Nieznane nazwisko'}
+                                            </span>
+                                            <span className="post-user-email">({post.user?.email || 'Nieznany email'})</span>
                                         </div>
                                     </div>
                                     <p className="black-text2">{post.content}</p>
                                     <small className="postboard-post-date">
                                         {new Date(post.created_at).toLocaleString()}
                                     </small>
+                                    <div className="comments-section">
+                                        <h3>Komentarze:</h3>
+                                        {post.comments?.length ? (
+                                            <ul className="comments-list">
+                                                {post.comments.map((comment) => (
+                                                    <li key={comment.id} className="comment-item">
+                                                        <p>{comment.content}</p>
+                                                        <small>
+                                                            {comment.user?.imie || 'Anonim'} - {new Date(comment.created_at).toLocaleString()}
+                                                        </small>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p className="no-comments-text">Brak komentarzy.</p>
+                                        )}
+                                        <form
+                                            className="comment-form"
+                                            onSubmit={(e) => handleCommentSubmit(e, post.id)}
+                                        >
+                                            <textarea
+                                                className="comment-textarea"
+                                                value={commentContent}
+                                                onChange={(e) => setCommentContent(e.target.value)}
+                                                placeholder="Dodaj komentarz..."
+                                            ></textarea>
+                                            <button className="comment-button" type="submit">Dodaj komentarz</button>
+                                        </form>
+                                    </div>
                                 </li>
                             ))}
                         </ul>
