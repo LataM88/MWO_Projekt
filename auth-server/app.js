@@ -754,6 +754,51 @@ app.get('/api/posts', async (req, res) => {
     }
 });
 
+// Endpoint do pobierania postów konkretnego użytkownika (profil)
+app.get('/api/posts/:userId', async (req, res) => {
+    const { userId } = req.params;
+
+    try {
+        const { data, error } = await supabase
+            .from('posts')
+            .select(`
+                id,
+                content,
+                created_at,
+                users:users (
+                    email,
+                    imie,
+                    nazwisko,
+                    image
+                )
+            `)
+            .eq('users_id', userId) // Filtrowanie po userId
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Błąd podczas pobierania postów użytkownika:', error);
+            return res.status(500).json({ error: 'Błąd pobierania postów użytkownika' });
+        }
+
+        const posts = data.map(post => ({
+            id: post.id,
+            content: post.content,
+            created_at: post.created_at,
+            user: post.users ? {
+                email: post.users.email || 'Nieznany użytkownik',
+                imie: post.users.imie || 'Nieznane imię',
+                nazwisko: post.users.nazwisko || 'Nieznane nazwisko',
+                image: post.users.image || 'default-avatar.jpg',
+            } : null
+        }));
+
+        res.status(200).json(posts);
+    } catch (error) {
+        console.error('Błąd serwera podczas pobierania postów użytkownika:', error);
+        res.status(500).json({ error: 'Wewnętrzny błąd serwera' });
+    }
+});
+
 
 // Endpoint do dodawania postów
 app.post('/api/posts', async (req, res) => {

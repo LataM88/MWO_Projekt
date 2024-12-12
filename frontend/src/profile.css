@@ -52,18 +52,6 @@ html, body {
     color: red;
 }
 
-.inputButtonProfile {
-    border: none;
-    background-color: rgba(21, 72, 75, 1);
-    color: white;
-    padding: 10px 30px;
-    font-size: 1rem;
-    border-radius: 25px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    width: 100%;
-    max-width: 250px;
-}
 
 .inputButtonProfile:hover {
     background-color: #005f63;
@@ -79,7 +67,7 @@ html, body {
     overflow-wrap: break-word;
 }
 
-.profile-content p.email {
+.profile-info p.email {
     font-size: 1.4rem;
     font-weight: bold;
     color: #2e3d42;
@@ -89,7 +77,7 @@ html, body {
     padding-bottom: 10px;
 }
 
-.profile-content .title {
+.profile-info .title {
     font-size: 1.3rem;
     font-weight: bold;
     margin-bottom: 5px;
@@ -109,10 +97,18 @@ html, body {
     display: flex;
     gap: 10px;
 }
+.tab-buttons {
+    display: flex; /* Ustawia kontener jako Flexbox */
+    gap: 10px; /* Odstęp między przyciskami */
+    margin-bottom: 20px; /* Odstęp poniżej całej grupy przycisków */
+}
 
+.tab-buttons button,
+.inputButtonProfile,
 .edit-button,
 .save-button,
 .cancel-button {
+    font-family: "Langar";
     border: none;
     background-color: #005f63;
     color: white;
@@ -123,6 +119,7 @@ html, body {
     transition: background-color 0.3s ease;
 }
 
+.inputButtonProfile:hover,
 .edit-button:hover,
 .save-button:hover,
 .cancel-button:hover {
@@ -136,4 +133,26 @@ html, body {
 .cancel-button:hover {
     background-color: #c9302c;
 }
+
+.postywprofilu .post-header {
+    display: block; /* Każdy element w post-header będzie wyświetlany w osobnej linii */
+    margin-bottom: 10px; /* Dystans pomiędzy post-header a post-content */
+}
+
+.postywprofilu .user-info {
+
+    margin-left: 0; /* Usuwamy odstęp, ponieważ elementy będą w nowej linii */
+}
+
+.postywprofilu .post-content {
+    display: block; /* Ustawiamy post-content na blok */
+    margin-top: 10px; /* Odstęp między post-content a post-date */
+}
+
+.postywprofilu .post-date {
+    display: block; /* Ustawiamy post-date na blok */
+    margin-top: 5px; /* Odstęp między post-content a post-date */
+}
+
+
 

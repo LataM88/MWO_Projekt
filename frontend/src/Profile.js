@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import './profile.css';
+import { useNavigate } from "react-router-dom";
 
 function Profile() {
     const { userId } = useParams();
@@ -9,9 +10,35 @@ function Profile() {
     const [isEditing, setIsEditing] = useState(false);
     const [editedOpis, setEditedOpis] = useState('');
     const [isOwnProfile, setIsOwnProfile] = useState(false);
+    const [posts, setPosts] = useState([]);
+    const [activeTab, setActiveTab] = useState('opis'); // Nowy stan dla aktywnego widoku
+    const navigate = useNavigate();
 
     const loggedInUser = JSON.parse(localStorage.getItem('user'));
     const loggedInUserId = loggedInUser ? loggedInUser.userId : null;
+
+    const handleChatClick = (userId, e) => {
+        e.stopPropagation(); // Prevent dropdown from closing immediately
+        navigate(`/chat/${userId}`);
+    };
+
+    useEffect(() => {
+        const fetchUserPosts = async () => {
+            try {
+                const response = await fetch(`http://localhost:3080/api/posts/${userId}`);
+                if (response.ok) {
+                    const postsData = await response.json();
+                    setPosts(postsData);
+                } else {
+                    console.error('Błąd podczas pobierania postów.');
+                }
+            } catch (error) {
+                console.error('Błąd podczas pobierania postów użytkownika:', error);
+            }
+        };
+
+        fetchUserPosts();
+    }, [userId]);
 
     useEffect(() => {
         const parsedLoggedInUserId = Number(loggedInUserId);
@@ -111,64 +138,121 @@ function Profile() {
                     <span className={`status ${user.isActive ? '' : 'inactive'}`}>
                         {user.isActive ? 'Aktywny' : 'Nie aktywny'}
                     </span>
-
-                    <button className="inputButtonProfile">Wyślij wiadomość</button>
+                    <button className="inputButtonProfile" onClick={(e) => handleChatClick(user.id, e)}>Wyślij wiadomość</button>
                 </div>
             </div>
 
-            <div className="profile-content">
+            <div className="profile-info">
                 <p className="email">{user.imie + " " + user.nazwisko}</p>
-                <p>{user.id}</p>
                 <div className="email-line"></div>
-                <p className="title">O mnie:</p>
-                {isEditing ? (
-                    <textarea
-                        value={editedOpis}
-                        onChange={handleOpisChange}
-                        className="edit-textarea"
-                    />
-                ) : (
-                    <p>{user.opis || 'Brak opisu.'}</p>
-                )}
-                <div className="edit-actions">
-                    {isOwnProfile ? (
-                        <>
-                            {isEditing ? (
-                                <>
-                                    <button onClick={saveOpis} className="save-button">
-                                        Zapisz
-                                    </button>
-                                    <button onClick={toggleEditMode} className="cancel-button">
-                                        Anuluj
-                                    </button>
-                                </>
-                            ) : (
-                                <button onClick={toggleEditMode} className="edit-button">
-                                    Edytuj opis
-                                </button>
-                            )}
-                        </>
-                    ) : (
-                        <p></p>
-                    )}
-                    {isOwnProfile && (
-                        <>
-                            <button onClick={triggerFileInput} className="edit-button">
-                                Zmień zdjęcie
-                            </button>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                id="file-upload"
-                                style={{ display: 'none' }}
-                                onChange={handleImageUpload}
+            </div>
+
+            <div className="tab-buttons">
+                <button
+                    className={activeTab === 'opis' ? 'active-tab' : ''}
+                    onClick={() => setActiveTab('opis')}
+                >
+                    O mnie
+                </button>
+                <button
+
+                    className={activeTab === 'posts' ? 'active-tab' : ''}
+                    onClick={() => setActiveTab('posts')}
+                >
+                    Moje posty
+                </button>
+            </div>
+
+            <div className="profile-content">
+                {activeTab === 'opis' && (
+                    <>
+                        <p className="title">O mnie:</p>
+                        {isEditing ? (
+                            <textarea
+                                value={editedOpis}
+                                onChange={handleOpisChange}
+                                className="edit-textarea"
                             />
-                        </>
-                    )}
-                </div>
+                        ) : (
+                            <p>{user.opis || 'Brak opisu.'}</p>
+                        )}
+                        <div className="edit-actions">
+                            {isOwnProfile ? (
+                                <>
+                                    {isEditing ? (
+                                        <>
+                                            <button onClick={saveOpis} className="save-button">
+                                                Zapisz
+                                            </button>
+                                            <button onClick={toggleEditMode} className="cancel-button">
+                                                Anuluj
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <button onClick={toggleEditMode} className="edit-button">
+                                            Edytuj opis
+                                        </button>
+                                    )}
+                                </>
+                            ) : null}
+                            {isOwnProfile && (
+                                <>
+                                    <button onClick={triggerFileInput} className="edit-button">
+                                        Zmień zdjęcie
+                                    </button>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        id="file-upload"
+                                        style={{ display: 'none' }}
+                                        onChange={handleImageUpload}
+                                    />
+                                </>
+                            )}
+                        </div>
+                    </>
+                )}
+
+                {activeTab === 'posts' && (
+                    <div className="postywprofilu">
+                        <div className="user-posts">
+                            <p className="title">Posty użytkownika {user.imie}</p>
+                            {posts.length > 0 ? (
+                                posts.map((post) => (
+                                    <div className="post-header" key={post.id}>
+                                        <img
+                                            src={post.user?.image || 'default-avatar.jpg'}
+                                            alt="Ikona użytkownika"
+                                            className="user-icon"
+                                        />
+                                        <div className="user-info">
+                                            <span className="post-user-name">
+                                                {post.user?.imie || 'Nieznane imię'} {post.user?.nazwisko || 'Nieznane nazwisko'}
+                                            </span>
+                                            <span className="post-user-email">
+                                                ({post.user?.email || 'Nieznany email'})
+                                            </span>
+                                        </div>
+                                        <div className="post-content">
+                                            <p className="black-text2">{post.content}</p>
+                                        </div>
+                                        <div className="post-date">
+                                            <small className="postboard-post-date">
+                                                {new Date(post.created_at).toLocaleString()}
+                                            </small>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p>Brak postów do wyświetlenia.</p>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
 }
 
 export default Profile;
+
