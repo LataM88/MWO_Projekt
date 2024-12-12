@@ -4,8 +4,8 @@ import UserPanel from "./components/UserPanel.jsx";
 
 const PostBoard = () => {
     const [posts, setPosts] = useState([]);
-    const [content, setContent] = useState('');
-    const [commentContent, setCommentContent] = useState(''); // Treść komentarza
+    const [content, setContent] = useState(''); // Treść posta
+    const [commentContents, setCommentContents] = useState({}); // Treści komentarzy
     const [userEmail, setUserEmail] = useState('');
     const [userIcon, setUserIcon] = useState('default-avatar.jpg');
     const [userId, setUserId] = useState(null);
@@ -13,6 +13,7 @@ const PostBoard = () => {
     const API_URL = 'http://localhost:3080/api/posts';
     const COMMENTS_API_URL = 'http://localhost:3080/api/comments'; // Adres API do obsługi komentarzy
 
+    // Funkcja do pobierania danych użytkownika z localStorage
     const fetchUserData = () => {
         const userData = localStorage.getItem('user');
         if (userData) {
@@ -29,6 +30,7 @@ const PostBoard = () => {
         }
     };
 
+    // Funkcja do obsługi dodawania postów
     const handlePostSubmit = async (event) => {
         event.preventDefault();
         if (!content) {
@@ -58,6 +60,7 @@ const PostBoard = () => {
         }
     };
 
+    // Funkcja do pobierania postów z backendu
     const fetchPosts = async () => {
         try {
             const response = await fetch(API_URL);
@@ -72,8 +75,20 @@ const PostBoard = () => {
         }
     };
 
+    // Funkcja do zmiany treści komentarza dla danego postu
+    const handleCommentChange = (event, postId) => {
+        const { value } = event.target;
+        setCommentContents((prev) => ({
+            ...prev,
+            [postId]: value, // Zmieniamy zawartość komentarza dla odpowiedniego posta
+        }));
+    };
+
+    // Funkcja do obsługi dodawania komentarzy
     const handleCommentSubmit = async (event, postId) => {
         event.preventDefault();
+        const commentContent = commentContents[postId]; // Pobieramy treść komentarza dla danego postu
+
         if (!commentContent) {
             alert('Treść komentarza nie może być pusta!');
             return;
@@ -89,11 +104,12 @@ const PostBoard = () => {
             });
 
             if (!response.ok) {
-                alert('Nie udało się dodać komentarza.');
+                const errorData = await response.json();
+                alert(`Błąd: ${errorData.error || 'Nie udało się dodać komentarza.'}`);
                 return;
             }
 
-            setCommentContent(''); // Reset pola komentarza
+            setCommentContents((prev) => ({ ...prev, [postId]: '' })); // Resetowanie komentarza tylko dla danego postu
             await fetchPosts(); // Odśwież listę postów z komentarzami
         } catch (error) {
             console.error('Błąd wysyłania żądania komentarza:', error);
@@ -167,8 +183,8 @@ const PostBoard = () => {
                                         >
                                             <textarea
                                                 className="comment-textarea"
-                                                value={commentContent}
-                                                onChange={(e) => setCommentContent(e.target.value)}
+                                                value={commentContents[post.id] || ''}
+                                                onChange={(e) => handleCommentChange(e, post.id)} // Zmieniamy tylko dla odpowiedniego postu
                                                 placeholder="Dodaj komentarz..."
                                             ></textarea>
                                             <button className="comment-button" type="submit">Dodaj komentarz</button>

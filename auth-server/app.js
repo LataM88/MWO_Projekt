@@ -694,25 +694,36 @@ app.get('/api/posts', async (req, res) => {
         const { data, error } = await supabase
             .from('posts')
             .select(`
-        id,
-        content,
-        created_at,
-        users:users (
-            email,
-            imie,
-            nazwisko,
-            image
-        )
-    `)
+                id,
+                content,
+                created_at,
+                users:users (
+                    email,
+                    imie,
+                    nazwisko,
+                    image
+                ),
+                comments:comments (
+                    id,
+                    content,
+                    created_at,
+                    user_id,
+                    users:users (
+                        imie,
+                        nazwisko,
+                        email,
+                        image
+                    )
+                )
+            `)
             .order('created_at', { ascending: false });
-        console.log('Pobrane dane z Supabase:', data);
+
         if (error) {
             console.log('Błąd podczas pobierania postów:', error);
             return res.status(500).json({ error: 'Błąd pobierania postów' });
         }
 
-        console.log('Pobrane dane z Supabase:', data);
-
+        // Mapowanie danych do odpowiedniego formatu
         const posts = data.map(post => ({
             id: post.id,
             content: post.content,
@@ -722,7 +733,18 @@ app.get('/api/posts', async (req, res) => {
                 imie: post.users.imie || 'Nieznane imię',
                 nazwisko: post.users.nazwisko || 'Nieznane nazwisko',
                 image: post.users.image || 'default-avatar.jpg',
-            } : null
+            } : null,
+            comments: post.comments.map(comment => ({
+                id: comment.id,
+                content: comment.content,
+                created_at: comment.created_at,
+                user: comment.users ? {
+                    imie: comment.users.imie || 'Anonim',
+                    nazwisko: comment.users.nazwisko || 'Anonim',
+                    email: comment.users.email || 'Nieznany użytkownik',
+                    image: comment.users.image || 'default-avatar.jpg',
+                } : null
+            }))
         }));
 
         res.status(200).json(posts);
@@ -773,6 +795,84 @@ app.post('/api/posts', async (req, res) => {
 
         console.log('Zapisano post:', newPost);
         res.status(201).json(newPost); // Return the saved post
+    } catch (error) {
+        console.error('Błąd serwera:', error);
+        res.status(500).json({ error: 'Wewnętrzny błąd serwera' });
+    }
+});
+// Endpoint do pobierania komentarzy do postów
+app.get('/api/comments', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('comments')
+            .select(`
+                id,
+                content,
+                created_at,
+                post_id,
+                users:users (
+                    email,
+                    imie,
+                    nazwisko,
+                    image
+                )
+            `)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.log('Błąd podczas pobierania komentarzy:', error);
+            return res.status(500).json({ error: 'Błąd pobierania komentarzy' });
+        }
+
+        const comments = data.map(comment => ({
+            id: comment.id,
+            content: comment.content,
+            created_at: comment.created_at,
+            post_id: comment.post_id,
+            user: comment.users ? {
+                email: comment.users.email || 'Nieznany użytkownik',
+                imie: comment.users.imie || 'Nieznane imię',
+                nazwisko: comment.users.nazwisko || 'Nieznane nazwisko',
+                image: comment.users.image || 'default-avatar.jpg',
+            } : null
+        }));
+
+        res.status(200).json(comments);
+    } catch (error) {
+        console.log('Błąd serwera:', error);
+        res.status(500).json({ error: 'Wewnętrzny błąd serwera' });
+    }
+});
+
+// Endpoint do dodawania komentarzy
+app.post('/api/comments', async (req, res) => {
+    const { post_id, user_id, content } = req.body;
+
+    if (!post_id || !user_id || !content) {
+        console.log('Brak wymaganych pól:', { post_id, user_id, content });
+        return res.status(400).json({ error: 'Brakuje wymaganych pól: post_id, user_id, content' });
+    }
+
+    try {
+        // Insert comment
+        const { data: newComment, error: commentError } = await supabase
+            .from('comments')
+            .insert([{
+                post_id,
+                user_id,
+                content,
+                created_at: new Date().toISOString(),
+            }])
+            .select('*')
+            .single();
+
+        if (commentError) {
+            console.log('Błąd dodawania komentarza:', commentError);
+            return res.status(500).json({ error: 'Błąd zapisu komentarza do bazy danych' });
+        }
+
+        console.log('Zapisano komentarz:', newComment);
+        res.status(201).json(newComment); // Zwracamy zapisany komentarz
     } catch (error) {
         console.error('Błąd serwera:', error);
         res.status(500).json({ error: 'Wewnętrzny błąd serwera' });

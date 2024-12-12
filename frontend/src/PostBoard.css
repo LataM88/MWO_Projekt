@@ -169,3 +169,7 @@ li.postboard-post-item {
     color: black;
     font-size: 14px;
 }
+.comment-item p {
+    font-size: 14px; /* Opcjonalnie, zmień rozmiar czcionki */
+    color: #333; /* Kolor tekstu komentarza */
+}
