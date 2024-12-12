@@ -46,75 +46,70 @@ function Chat() {
         fetchUsers();
     }, [currentUser.email]);
 
-    useEffect(() => {
-        if (activeUser) {
-            const fetchMessages = async () => {
-                try {
-                    const response = await fetch(`http://localhost:3080/messages/${currentUser.userId}/${activeUser.id}`);
-                    const data = await response.json();
-                    if (data && Array.isArray(data.messages)) {
-                        const allMessages = getMessagesFromStorage();
-                        const updatedMessages = [...allMessages, ...data.messages];
-                        localStorage.setItem('messages', JSON.stringify(updatedMessages));
-                        setMessages(updatedMessages.filter(msg =>
-                            (msg.senderId === currentUser.userId && msg.receiverId === activeUser.id) ||
-                            (msg.senderId === activeUser.id && msg.receiverId === currentUser.userId)
-                        ));
-                    } else {
-                        setMessages([]);
-                    }
-                } catch (error) {
-                    console.error('Error fetching messages:', error);
-                }
-            };
-            fetchMessages();
-        }
-    }, [activeUser, currentUser.userId]);
-
-    useEffect(() => {
-        if (activeUser) {
-            const savedMessages = getMessagesFromStorage();
-            const userMessages = savedMessages.filter(msg =>
-                (msg.senderId === currentUser.userId && msg.receiverId === activeUser.id) ||
-                (msg.senderId === activeUser.id && msg.receiverId === currentUser.userId)
-            );
-            setMessages(userMessages);
-        }
-    }, [activeUser, currentUser]);
-
-    useEffect(() => {
-        ws.current = new WebSocket('ws://localhost:3080');
-
-        ws.current.onopen = () => {
-            console.log('WebSocket connected');
-        };
-
-        ws.current.onmessage = (event) => {
-            const newMessage = JSON.parse(event.data);
-            if (!newMessage.timestamp) {
-                newMessage.timestamp = new Date().toISOString();
-            }
-
-            setMessages((prevMessages) => {
-                const exists = prevMessages.some(
-                    (msg) => msg.senderId === newMessage.senderId && msg.timestamp === newMessage.timestamp
-                );
-                if (!exists) {
-                    const updatedMessages = [...prevMessages, newMessage];
+useEffect(() => {
+    if (activeUser) {
+        const fetchMessages = async () => {
+            try {
+                const response = await fetch(`http://localhost:3080/messages/${currentUser.userId}/${activeUser.id}`);
+                const data = await response.json();
+                if (data && Array.isArray(data.messages)) {
+                    const allMessages = getMessagesFromStorage();
+                    const updatedMessages = [...allMessages, ...data.messages];
                     localStorage.setItem('messages', JSON.stringify(updatedMessages));
-                    return updatedMessages;
+                    setMessages(updatedMessages.filter(msg =>
+                        (msg.senderId === currentUser.userId && msg.receiverId === activeUser.id) ||
+                        (msg.senderId === activeUser.id && msg.receiverId === currentUser.userId)
+                    ));
                 } else {
-                    return prevMessages;
+                    setMessages([]);
                 }
-            });
-        };
-
-        return () => {
-            if (ws.current) {
-                ws.current.close();
+            } catch (error) {
+                console.error('Error fetching messages:', error);
             }
         };
-    }, []);
+        fetchMessages();
+        const savedMessages = getMessagesFromStorage();
+        const userMessages = savedMessages.filter(msg =>
+            (msg.senderId === currentUser.userId && msg.receiverId === activeUser.id) ||
+            (msg.senderId === activeUser.id && msg.receiverId === currentUser.userId)
+        );
+        setMessages(userMessages);
+    }
+}, [activeUser, currentUser.userId]);
+
+useEffect(() => {
+    ws.current = new WebSocket('ws://localhost:3080');
+
+    ws.current.onopen = () => {
+        console.log('WebSocket connected');
+    };
+
+    ws.current.onmessage = (event) => {
+        const newMessage = JSON.parse(event.data);
+        if (!newMessage.timestamp) {
+            newMessage.timestamp = new Date().toISOString();
+        }
+
+        setMessages((prevMessages) => {
+            const exists = prevMessages.some(
+                (msg) => msg.senderId === newMessage.senderId && msg.timestamp === newMessage.timestamp
+            );
+            if (!exists) {
+                const updatedMessages = [...prevMessages, newMessage];
+                localStorage.setItem('messages', JSON.stringify(updatedMessages));
+                return updatedMessages;
+            } else {
+                return prevMessages;
+            }
+        });
+    };
+
+    return () => {
+        if (ws.current) {
+            ws.current.close();
+        }
+    };
+}, []);
 
     const formatTime = (timestamp) => {
         const date = new Date(timestamp);
