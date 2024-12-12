@@ -30,9 +30,11 @@ function Chat() {
                 const response = await fetch('http://localhost:3080/api/users');
                 if (response.ok) {
                     const data = await response.json();
-                    setUsers(data);
-                    const selectedUser = data.find(user => user.id === parseInt(userId));
-                    setActiveUser(selectedUser || null);
+                    const filteredUsers = data.filter(
+                        (user) => user.email !== currentUser.email
+                    );
+                    setUsers(filteredUsers);
+                    setFilteredUsers(filteredUsers); // Initially set all users
                 } else {
                     console.error('Failed to fetch users:', response.statusText);
                 }
@@ -42,7 +44,7 @@ function Chat() {
         };
 
         fetchUsers();
-    }, [userId]);
+    }, [currentUser.email]);
 
     useEffect(() => {
         if (activeUser) {
@@ -69,8 +71,6 @@ function Chat() {
         }
     }, [activeUser, currentUser.userId]);
 
-
-
     useEffect(() => {
         if (activeUser) {
             const savedMessages = getMessagesFromStorage();
@@ -83,39 +83,38 @@ function Chat() {
     }, [activeUser, currentUser]);
 
     useEffect(() => {
-         ws.current = new WebSocket('ws://localhost:3080');
+        ws.current = new WebSocket('ws://localhost:3080');
 
-         ws.current.onopen = () => {
-             console.log('WebSocket connected');
-         };
+        ws.current.onopen = () => {
+            console.log('WebSocket connected');
+        };
 
-         ws.current.onmessage = (event) => {
-             const newMessage = JSON.parse(event.data);
-             if (!newMessage.timestamp) {
-                 newMessage.timestamp = new Date().toISOString();
-             }
+        ws.current.onmessage = (event) => {
+            const newMessage = JSON.parse(event.data);
+            if (!newMessage.timestamp) {
+                newMessage.timestamp = new Date().toISOString();
+            }
 
-             setMessages((prevMessages) => {
-                 const exists = prevMessages.some(
-                     (msg) => msg.senderId === newMessage.senderId && msg.timestamp === newMessage.timestamp
-                 );
-                 if (!exists) {
-                     const updatedMessages = [...prevMessages, newMessage];
-                     localStorage.setItem('messages', JSON.stringify(updatedMessages));
-                     return updatedMessages;
-                 } else {
-                     return prevMessages;
-                 }
-             });
-         };
+            setMessages((prevMessages) => {
+                const exists = prevMessages.some(
+                    (msg) => msg.senderId === newMessage.senderId && msg.timestamp === newMessage.timestamp
+                );
+                if (!exists) {
+                    const updatedMessages = [...prevMessages, newMessage];
+                    localStorage.setItem('messages', JSON.stringify(updatedMessages));
+                    return updatedMessages;
+                } else {
+                    return prevMessages;
+                }
+            });
+        };
 
-         return () => {
-             if (ws.current) {
-                 ws.current.close();
-             }
-         };
-     }, []);
-
+        return () => {
+            if (ws.current) {
+                ws.current.close();
+            }
+        };
+    }, []);
 
     const formatTime = (timestamp) => {
         const date = new Date(timestamp);
@@ -156,7 +155,7 @@ function Chat() {
     };
 
     const handleKeyPress = (e) => {
-        if(e.key === 'Enter') {
+        if (e.key === 'Enter') {
             handleSendMessage();
         }
     };
@@ -226,7 +225,7 @@ function Chat() {
                                 type="text"
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
-                                onKeyPress={handleKeyPress}
+                                onKeyPress={handleKeyPress} // Obsługa klawisza Enter
                                 placeholder="Wpisz swoją wiadomość"
                             />
                             <button onClick={handleSendMessage}>Wyślij</button>
