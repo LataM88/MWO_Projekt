@@ -134,15 +134,52 @@ html, body {
     background-color: #c9302c;
 }
 
-.postywprofilu .post-header {
-    display: block; /* Każdy element w post-header będzie wyświetlany w osobnej linii */
-    margin-bottom: 10px; /* Dystans pomiędzy post-header a post-content */
+.post-headerr {
+    background-color: #f9f9f9; /* Jasne szare tło dla postów */
+    color: #333; /* Ciemny kolor tekstu w postach */
+    padding: 15px;
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+.postywprofilu {
+    margin-top: 10px; /* Przerwa między mailem użytkownika a treścią posta */
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.postywprofilu .user-info {
+    display: flex;          /* Układ flexbox */
+    flex-direction: row;    /* Układ elementów w poziomie */
+    align-items: center;    /* Wyśrodkowanie elementów w pionie */
+}
+
+
+.postywprofilu .user-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin-right: 10px;
 }
 
 .postywprofilu .user-info {
 
-    margin-left: 0; /* Usuwamy odstęp, ponieważ elementy będą w nowej linii */
 }
+
+.profil-posty-dane .post-user-name {
+    font-weight: bold;
+    color: #333;
+    display: block; /* Imię i nazwisko jako blok */
+    margin-bottom: 5px; /* Odstęp między nazwiskiem a e-mailem */
+}
+
+.profil-posty-dane .post-user-email {
+    display: block; /* E-mail w nowej linii */
+}
+
 
 .postywprofilu .post-content {
     display: block; /* Ustawiamy post-content na blok */

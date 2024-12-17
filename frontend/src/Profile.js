@@ -219,25 +219,29 @@ function Profile() {
                             <p className="title">Posty użytkownika {user.imie}</p>
                             {posts.length > 0 ? (
                                 posts.map((post) => (
-                                    <div className="post-header" key={post.id}>
-                                        <img
-                                            src={post.user?.image || 'default-avatar.jpg'}
-                                            alt="Ikona użytkownika"
-                                            className="user-icon"
-                                        />
+                                    <div className="post-headerr" key={post.id}>
                                         <div className="user-info">
-                                            <span className="post-user-name">
-                                                {post.user?.imie || 'Nieznane imię'} {post.user?.nazwisko || 'Nieznane nazwisko'}
-                                            </span>
-                                            <span className="post-user-email">
-                                                ({post.user?.email || 'Nieznany email'})
-                                            </span>
+                                            <div className="profil-posty-zdj">
+                                                <img
+                                                    src={post.user?.image || 'default-avatar.jpg'}
+                                                    alt="Ikona użytkownika"
+                                                    className="user-icon"
+                                                />
+                                            </div>
+                                            <div className="profil-posty-dane">
+                                                <span className="post-user-name">
+                                                    {post.user?.imie || 'Nieznane imię'} {post.user?.nazwisko || 'Nieznane nazwisko'}
+                                                </span>
+                                                <span className="post-user-email">
+                                                    {post.user?.email || 'Nieznany email'}
+                                                </span>
+                                            </div>
                                         </div>
                                         <div className="post-content">
                                             <p className="black-text2">{post.content}</p>
                                         </div>
                                         <div className="post-date">
-                                            <small className="postboard-post-date">
+                                        <small className="postboard-post-date">
                                                 {new Date(post.created_at).toLocaleString()}
                                             </small>
                                         </div>
