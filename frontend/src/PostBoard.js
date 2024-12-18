@@ -9,7 +9,7 @@ const PostBoard = () => {
     const [userEmail, setUserEmail] = useState('');
     const [userIcon, setUserIcon] = useState('default-avatar.jpg');
     const [userId, setUserId] = useState(null);
-    const [showComments, setShowComments] = useState({}); // Stan dla rozwijania/zwijania komentarzy
+    const [showComments, setShowComments] = useState({});
 
     const API_URL = 'http://localhost:3080/api/posts';
     const COMMENTS_API_URL = 'http://localhost:3080/api/comments';
@@ -118,6 +118,12 @@ const PostBoard = () => {
         }));
     };
 
+    // Funkcja do zamiany tekstu na HTML z klikalnymi linkami i nowymi liniami
+    const formatContent = (text) => {
+        const linkifiedText = text.replace(/(https?:\/\/\S+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+        return linkifiedText.replace(/\n/g, '<br />');
+    };
+
     useEffect(() => {
         fetchUserData();
         fetchPosts();
@@ -159,7 +165,10 @@ const PostBoard = () => {
                                                 className="post-user-email">({post.user?.email || 'Nieznany email'})</span>
                                         </div>
                                     </div>
-                                    <p className="black-text2">{post.content}</p>
+                                    <p
+                                        className="black-text2"
+                                        dangerouslySetInnerHTML={{ __html: formatContent(post.content) }}
+                                    ></p>
                                     <small className="postboard-post-date">
                                         {new Date(post.created_at).toLocaleString()}
                                     </small>
@@ -179,7 +188,7 @@ const PostBoard = () => {
                                                             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
                                                             .map((comment) => (
                                                                 <li key={comment.id} className="comment-item">
-                                                                    <p>{comment.content}</p>
+                                                                    <p dangerouslySetInnerHTML={{ __html: formatContent(comment.content) }}></p>
                                                                     <small>
                                                                         {comment.user?.imie || 'Anonim'} - {new Date(comment.created_at).toLocaleString()}
                                                                     </small>
@@ -191,7 +200,6 @@ const PostBoard = () => {
                                                 )}
                                             </>
                                         )}
-                                        {/* Pokaż liczbę komentarzy tylko przy zwiniętych komentarzach */}
                                         {!showComments[post.id] && post.comments?.length === 0 && (
                                             <p className="comments-count">0 komentarzy</p>
                                         )}
@@ -202,12 +210,12 @@ const PostBoard = () => {
                                             className="comment-form"
                                             onSubmit={(e) => handleCommentSubmit(e, post.id)}
                                         >
-        <textarea
-            className="comment-textarea"
-            value={commentContents[post.id] || ''}
-            onChange={(e) => handleCommentChange(e, post.id)}
-            placeholder="Dodaj komentarz..."
-        ></textarea>
+                                            <textarea
+                                                className="comment-textarea"
+                                                value={commentContents[post.id] || ''}
+                                                onChange={(e) => handleCommentChange(e, post.id)}
+                                                placeholder="Dodaj komentarz..."
+                                            ></textarea>
                                             <button className="comment-button" type="submit">Dodaj komentarz</button>
                                         </form>
                                     </div>
