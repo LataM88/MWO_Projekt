@@ -11,15 +11,20 @@ function Profile() {
     const [editedOpis, setEditedOpis] = useState('');
     const [isOwnProfile, setIsOwnProfile] = useState(false);
     const [posts, setPosts] = useState([]);
-    const [activeTab, setActiveTab] = useState('opis'); // Nowy stan dla aktywnego widoku
+    const [activeTab, setActiveTab] = useState('opis');
     const navigate = useNavigate();
 
     const loggedInUser = JSON.parse(localStorage.getItem('user'));
     const loggedInUserId = loggedInUser ? loggedInUser.userId : null;
 
     const handleChatClick = (userId, e) => {
-        e.stopPropagation(); // Prevent dropdown from closing immediately
+        e.stopPropagation();
         navigate(`/chat/${userId}`);
+    };
+
+    const formatContent = (text) => {
+        const linkifiedText = text.replace(/(https?:\/\/\S+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+        return linkifiedText.replace(/\n/g, '<br />');
     };
 
     useEffect(() => {
@@ -155,7 +160,6 @@ function Profile() {
                     O mnie
                 </button>
                 <button
-
                     className={activeTab === 'posts' ? 'active-tab' : ''}
                     onClick={() => setActiveTab('posts')}
                 >
@@ -174,7 +178,7 @@ function Profile() {
                                 className="edit-textarea"
                             />
                         ) : (
-                            <p>{user.opis || 'Brak opisu.'}</p>
+                            <p dangerouslySetInnerHTML={{ __html: formatContent(user.opis || 'Brak opisu.') }}></p>
                         )}
                         <div className="edit-actions">
                             {isOwnProfile ? (
@@ -238,10 +242,13 @@ function Profile() {
                                             </div>
                                         </div>
                                         <div className="post-content">
-                                            <p className="black-text2">{post.content}</p>
+                                            <p
+                                                className="black-text2"
+                                                dangerouslySetInnerHTML={{__html: formatContent(post.content)}}
+                                            ></p>
                                         </div>
                                         <div className="post-date">
-                                        <small className="postboard-post-date">
+                                            <small className="postboard-post-date">
                                                 {new Date(post.created_at).toLocaleString()}
                                             </small>
                                         </div>
@@ -253,6 +260,7 @@ function Profile() {
                         </div>
                     </div>
                 )}
+
             </div>
         </div>
     );
