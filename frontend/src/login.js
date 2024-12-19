@@ -97,7 +97,7 @@ const Login = (props) => {
                 } else if (data.message === 'Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.') {
                     window.alert('Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.');
                 } else {
-                    window.alert("Błędny email lub hasło!");
+                    window.alert("Kod weryfikacyjny już wysłany, spróbuj ponownie później!");
                 }
             })
             .catch(error => {
@@ -137,7 +137,7 @@ const Login = (props) => {
                 localStorage.setItem("user", JSON.stringify(updatedUser));
 
                 props.setLoggedIn(true);
-                navigate("/"); // Redirect to homepage or desired page
+                navigate("/PostBoard"); // Redirect to homepage or desired page
             } else {
                 setVerificationCodeError("Nieprawidłowy kod weryfikacyjny.");
             }

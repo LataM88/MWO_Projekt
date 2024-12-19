@@ -182,55 +182,78 @@ app.post('/auth', async (req, res) => {
         .single();
 
     if (error || !user) {
+        console.log('Błąd podczas pobierania użytkownika lub użytkownik nie istnieje');
         return res.status(400).json({ message: 'Użytkownik nie istnieje.' });
     }
 
     if (!user.isActive) {
+        console.log('Konto nie zostało aktywowane');
         return res.status(403).json({ message: 'Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.' });
     }
 
     const result = await bcrypt.compare(password, user.password);
     if (!result) {
+        console.log('Nieprawidłowe hasło');
         return res.status(401).json({ message: 'Nieprawidłowe hasło.' });
-    } else {
-        // Generowanie kodu 2FA
-        const twoFactorCode = generateTwoFactorCode();
-        const { error: updateError } = await supabase
-            .from('users')
-            .update({ twoFactorCode })
-            .eq('id', user.id);
+    }
+    // Sprawdzenie czasu ostatniej wysyłki kodu
+    const currentTime = new Date(); // Czas lokalny serwera
+    const lastSent = user.lastTwoFactorSent ? new Date(user.lastTwoFactorSent) : null;
 
-        if (updateError) {
-            console.error('Błąd aktualizacji kodu 2FA:', updateError);
-            return res.status(500).json({ message: 'Błąd serwera podczas generowania kodu 2FA' });
+    const currentTimeInSeconds = Math.floor(currentTime.getTime() / 1000);
+    const lastSentInSeconds = lastSent ? Math.floor(lastSent.getTime() / 1000) : null;
+    const cooldownPeriod = 15 * 1000; // 15 sekund w milisekundach
+    const timeDifference = lastSentInSeconds ? currentTimeInSeconds - lastSentInSeconds : null;
+    console.log('Różnica w czasie w sekundach:', timeDifference);
+    if (lastSentInSeconds && timeDifference < cooldownPeriod / 1000) {  // Sprawdzamy w sekundach
+        const timeRemaining = Math.ceil((cooldownPeriod / 1000) - timeDifference);
+        console.log(`Cooldown aktywny, pozostało ${timeRemaining} sekund`);
+        return res.status(429).json({ message: `Proszę poczekać ${timeRemaining} sekund przed wysłaniem nowego kodu.` });
+    }
+    // Generowanie kodu 2FA
+    const twoFactorCode = generateTwoFactorCode();
+    console.log('Generowanie nowego kodu 2FA:', twoFactorCode);
+    // Zaktualizowanie pola `lastTwoFactorSent` i zapisanie nowego kodu
+    const { error: updateError } = await supabase
+        .from('users')
+        .update({
+            twoFactorCode,
+            lastTwoFactorSent: currentTime.toISOString() // Zaktualizowanie czasu wysyłki w formacie ISO (UTC)
+        })
+        .eq('id', user.id);
+    if (updateError) {
+        console.error('Błąd aktualizacji kodu 2FA:', updateError);
+        return res.status(500).json({ message: 'Błąd serwera podczas generowania kodu 2FA' });
+    }
+    // Wysyłanie kodu 2FA e-mailem (jedno wywołanie)
+    const mailOptions = {
+        from: '"ProjektMWO2024" <projekt.mwo24@gmail.com>', // Nadawca
+        to: email, // Odbiorca
+        subject: 'Kod weryfikacyjny',
+        html: `
+            <div style="width: 100%; background-color: rgba(21, 72, 75, 1); padding: 20px; font-family: 'Langar', sans-serif; box-sizing: border-box;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); text-align: center;">
+                    <h1 style="font-size: 24px; color: rgba(21, 72, 75, 1); margin-bottom: 20px;">Kod weryfikacyjny</h1>
+                    <p style="font-size: 16px; color: black; margin-bottom: 30px;">Twój kod weryfikacyjny:</p>
+                    <div style="font-size: 30px; font-weight: bold; background-color: rgba(21, 72, 75, 1); color: white; padding: 10px 20px; border-radius: 25px; display: inline-block; margin-bottom: 30px;">
+                        ${twoFactorCode}
+                    </div>
+                </div>
+            </div>
+        `
+    };
+
+    transporter.sendMail(mailOptions, (err) => {
+        if (err) {
+            console.error('Błąd wysyłania kodu 2FA:', err);
+            return res.status(500).json({ message: 'Błąd wysyłania kodu 2FA' });
         }
 
-        // Wysyłanie kodu 2FA e-mailem
-const mailOptions = {
-    from: '"ProjektMWO2024" <projekt.mwo24@gmail.com>', // Nadawca
-    to: email, // Odbiorca
-    subject: 'Kod weryfikacyjny',
-    html: `
-        <div style="width: 100%; background-color: rgba(21, 72, 75, 1); padding: 20px; font-family: 'Langar', sans-serif; box-sizing: border-box;">
-            <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); text-align: center;">
-                <h1 style="font-size: 24px; color: rgba(21, 72, 75, 1); margin-bottom: 20px;">Kod weryfikacyjny</h1>
-                <p style="font-size: 16px; color: black; margin-bottom: 30px;">Twój kod weryfikacyjny:</p>
-                <div style="font-size: 30px; font-weight: bold; background-color: rgba(21, 72, 75, 1); color: white; padding: 10px 20px; border-radius: 25px; display: inline-block; margin-bottom: 30px;">
-                    ${twoFactorCode}
-        </div>
-    `
-};
-
-        transporter.sendMail(mailOptions, (err) => {
-            if (err) {
-                console.error('Błąd wysyłania kodu 2FA:', err);
-                return res.status(500).json({ message: 'Błąd wysyłania kodu 2FA' });
-            }
-
-            res.status(200).json({ message: 'success', userId: user.id });
-        });
-    }
+        console.log('Kod 2FA został wysłany');
+        res.status(200).json({ message: 'success', userId: user.id });
+    });
 });
+
 
 // Endpoint do weryfikacji kodu 2FA
 app.post('/verify-2fa', async (req, res) => {
