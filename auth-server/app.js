@@ -9,6 +9,7 @@ import jwt from 'jsonwebtoken';
 import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
 import sharp from 'sharp';
+import cookieParser from 'cookie-parser';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -21,10 +22,34 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 const jwtSecretKey = 'dsfdsfsdfdsvcsvdfgefg'; // JWT secret key
+const refreshTokenSecretKey = 'sdnfdsnafjndjklehewhfjk';
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:3000',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(express.json());
+app.use(cookieParser());
+
+const authenticateToken = (req, res, next) => {
+    const token = req.cookies.accessToken; // Pobranie tokenu z ciasteczka
+
+    if (!token) {
+        return res.status(401).json({ message: 'Brak tokenu' });
+    }
+
+    jwt.verify(token, jwtSecretKey, (err, decoded) => {
+        if (err) {
+            return res.status(403).json({ message: 'Nieprawidłowy lub wygasły token' });
+        }
+
+        req.user = decoded; // Dodanie informacji o użytkowniku do żądania
+        next();
+    });
+};
 
 // WebSocket connection handler
 wss.on('connection', (ws) => {
@@ -50,6 +75,30 @@ wss.on('connection', (ws) => {
 // Main API route
 app.get('/', (_req, res) => {
     res.send('Auth API.\nPlease use POST /auth & POST /register for authentication');
+});
+
+app.use((req, res, next) => {
+    console.log('Ciasteczka:', req.cookies); // Sprawdź wszystkie ciasteczka
+    next();
+});
+
+//Tokeny
+const createAccessToken = (userId, email) => {
+    const payload = { userId, email };
+    console.log('tworzenie accestokena')
+    return jwt.sign(payload, jwtSecretKey, { expiresIn: '15m' }); // Ważność: 15 minut
+};
+
+const createRefreshToken = (userId, email) => {
+    const payload = { userId, email };
+    console.log('tworzenie refreshtokena')
+    return jwt.sign(payload, refreshTokenSecretKey, { expiresIn: '1h' }); // Ważność: 1 godzina
+};
+
+app.post('/logout', (req, res) => {
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+    res.status(200).json({ message: 'Wylogowano' });
 });
 
 // Registration endpoint
@@ -187,41 +236,62 @@ const mailOptions = {
 app.post('/verify-2fa', async (req, res) => {
     const { userId, twoFactorCode } = req.body;
 
-    const { data: user, error } = await supabase
-        .from('users')
-        .select('twoFactorCode')
-        .eq('id', userId)
-        .single();
+    try {
+        // Pobranie użytkownika z bazy danych
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('twoFactorCode, email')
+            .eq('id', userId)
+            .single();
 
-    if (error || !user) {
-        return res.status(400).json({ message: 'Nieprawidłowy użytkownik.' });
+        if (error || !user) {
+            return res.status(400).json({ message: 'Nieprawidłowy użytkownik.' });
+        }
+
+        // Weryfikacja kodu 2FA
+        if (user.twoFactorCode !== twoFactorCode) {
+            return res.status(401).json({ message: 'Nieprawidłowy kod weryfikacyjny.' });
+        }
+
+        // Usunięcie kodu 2FA po pomyślnej weryfikacji
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ twoFactorCode: null })
+            .eq('id', userId);
+
+        if (updateError) {
+            console.error('Błąd usuwania kodu 2FA:', updateError);
+            return res.status(500).json({ message: 'Błąd serwera' });
+        }
+
+        // Generowanie tokenów
+        const accessToken = createAccessToken(userId, user.email);
+        const refreshToken = createRefreshToken(userId, user.email);
+
+        // Ustawienie tokenów w ciasteczkach
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: true, // Dla lokalnego środowiska (HTTP)
+            sameSite: 'None', // Albo 'Lax' w zależności od potrzeb
+            maxAge: 15 * 60 * 1000, // 15 minut
+        });
+
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: true, // Dla lokalnego środowiska (HTTP)
+            sameSite: 'None', // Albo 'Lax' w zależności od potrzeb
+            maxAge: 60 * 60 * 1000, // 1 godzina
+        });
+        console.log("log przed wysłaniem odpowiedzi z verify-f2a")
+        // Zwrócenie odpowiedzi z powodzeniem
+        res.status(200).json({ message: 'Weryfikacja pomyślna' });
+        console.log("log po wysłaniem odpowiedzi z verify-f2a")
+    } catch (err) {
+        console.error('Błąd weryfikacji 2FA:', err);
+        res.status(500).json({ message: 'Błąd serwera' });
     }
-
-    if (user.twoFactorCode !== twoFactorCode) {
-        return res.status(401).json({ message: 'Nieprawidłowy kod weryfikacyjny.' });
-    }
-
-    // Usunięcie kodu po pomyślnej weryfikacji
-    const { error: updateError } = await supabase
-        .from('users')
-        .update({ twoFactorCode: null })
-        .eq('id', userId);
-
-    if (updateError) {
-        console.error('Błąd usuwania kodu 2FA:', updateError);
-        return res.status(500).json({ message: 'Błąd serwera' });
-    }
-
-    // Generowanie tokenu JWT
-    const loginData = {
-        userId,
-        exp: Date.now() / 1000 + 1800,
-        signInTime: Date.now() / 1000
-    };
-    const token = jwt.sign(loginData, jwtSecretKey);
-
-    res.status(200).json({ message: 'Weryfikacja pomyślna', token });
 });
+
 
 
 // Check if account exists endpoint
@@ -560,50 +630,83 @@ app.post('/upload-profile-image/:userId', upload.single('image'), async (req, re
     }
 });
 
-//weryfikacja tokenu
+
+
 app.post('/verify', (req, res) => {
-    const token = req.headers['jwt-token']; // Odczytujemy token z nagłówka
+    console.log('rozpoczęcie verify');
+    const token = req.cookies['accessToken'];
 
-    if (!token) {
-        return res.status(401).json({ message: 'Brak tokenu' });
-    }
 
-    // Sprawdzanie tokenu
     jwt.verify(token, jwtSecretKey, (err, decoded) => {
         if (err) {
-            return res.status(401).json({ message: 'Nieprawidłowy lub wygasły token' });
-        }
+            // Jeśli access token jest nieważny, próbujemy go odświeżyć
+            console.log('Token wygasł, próbuję odświeżyć token...');
+            const refreshToken = req.cookies['refreshToken'];
+            if (!refreshToken) {
+                return res.status(401).json({ message: 'Brak refresh tokenu' });
+            }
 
-        // Token jest ważny, zwracamy informacje
-        console.log('Token zweryfikowany, decoded:', decoded); // Opcjonalne logowanie danych tokenu
-        res.status(200).json({ message: 'success', userId: decoded.userId });
+            // Weryfikacja refresh tokenu
+            jwt.verify(refreshToken, refreshTokenSecretKey, (refreshErr, refreshDecoded) => {
+                if (refreshErr) {
+                    return res.status(403).json({ message: 'Refresh token jest nieprawidłowy lub wygasł' });
+                }
+
+                // Jeśli refresh token jest ważny, tworzymy nowy access token
+                const newAccessToken = createAccessToken(refreshDecoded.userId, refreshDecoded.email);
+
+                // Ustawienie nowego ciasteczka z access tokenem
+                res.cookie('accessToken', newAccessToken, {
+                    httpOnly: true,
+                    secure: false, // Użyj `true` w produkcji
+                    sameSite: 'None',
+                    maxAge: 15 * 60 * 1000, // 15 minut
+                });
+
+                console.log('Odświeżono access token');
+                // Powtarzamy weryfikację z nowym tokenem
+                jwt.verify(newAccessToken, jwtSecretKey, (finalErr, finalDecoded) => {
+                    if (finalErr) {
+                        return res.status(401).json({ message: 'Nieprawidłowy lub wygasły token' });
+                    }
+
+                    console.log('Token zweryfikowany po odświeżeniu, decoded:', finalDecoded);
+                    res.status(200).json({ message: 'success', userId: finalDecoded.userId });
+                });
+            });
+        } else {
+            console.log('Token zweryfikowany, decoded:', decoded);
+            res.status(200).json({ message: 'success', userId: decoded.userId });
+        }
     });
 });
-// Funkcja do tworzenia nowego tokenu
-const createNewToken = (userId, email) => {
-    const expTimeInSeconds = Math.floor(Date.now() / 1000) + 30 * 60;  // Dodanie 30 minut
-    const payload = { userId, email, exp: expTimeInSeconds };
-    const token = jwt.sign(payload, jwtSecretKey);
-    return token;
-};
+
 
 // Endpoint do przedłużenia sesji
 app.post('/refresh-token', (req, res) => {
-    const token = req.headers['jwt-token'];  // Odczytanie tokenu z nagłówka
+    const refreshToken = req.cookies['refreshToken'];
 
-    if (!token) {
-        return res.status(401).json({ message: 'Brak tokenu' });
+    if (!refreshToken) {
+        return res.status(401).json({ message: 'Brak refresh tokenu' });
     }
 
-    jwt.verify(token, jwtSecretKey, (err, decoded) => {
+    jwt.verify(refreshToken, refreshTokenSecretKey, (err, decoded) => {
         if (err) {
-            return res.status(401).json({ message: 'Nieprawidłowy token' });
+            return res.status(403).json({ message: 'Refresh token jest nieprawidłowy lub wygasł' });
         }
 
-        // Token jest ważny, przedłużamy sesję i generujemy nowy token
-        const newToken = createNewToken(decoded.userId, decoded.email);
-        res.status(200).json({ message: 'Token przedłużony', token: newToken });
-        console.log('To log z odnawiania tokenu')
+        // Tworzenie nowego accessToken
+        const newAccessToken = createAccessToken(decoded.userId, decoded.email);
+
+        // Ustawienie nowego ciasteczka z accessToken
+        res.cookie('accessToken', newAccessToken, {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'None',
+            maxAge: 15 * 60 * 1000, // Ważność: 15 minut
+        });
+
+        res.status(200).json({ message: 'Access token odświeżony' });
     });
 });
 

@@ -12,11 +12,29 @@ const Navbar = ({ setLoggedIn, setEmail }) => {
         setIsDropdownOpen(!isDropdownOpen);
     };
 
-    const logOut = () => {
-        localStorage.removeItem("user");
-        setLoggedIn(false);
-        setEmail("");
-        navigate('/login'); // Przekierowanie do logowania po wylogowaniu
+    const logOut = async () => {
+        try {
+            // Wywołanie endpointa logout
+            const response = await fetch('http://localhost:3080/logout', {
+                method: 'POST',
+                credentials: 'include', // Zapewnia, że ciasteczka są przesyłane
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                // Sukces - usunięcie lokalnych danych
+                localStorage.removeItem("user");
+                setLoggedIn(false);
+                setEmail("");
+                navigate('/login'); // Przekierowanie po wylogowaniu
+            } else {
+                console.error('Błąd podczas wylogowywania:', response.statusText);
+            }
+        } catch (error) {
+            console.error('Błąd połączenia z serwerem:', error);
+        }
     };
 
     useEffect(() => {
@@ -51,12 +69,23 @@ const Navbar = ({ setLoggedIn, setEmail }) => {
                     {isDropdownOpen && (
                         <ul className="dropdown-menu">
                             {user?.userId ? (
-                                <li><Link to={`/profile/${user.userId}`} className="dropdown-item">Mój Profil</Link>
+                                <li>
+                                    <Link to={`/profile/${user.userId}`} className="dropdown-item">
+                                        Mój Profil
+                                    </Link>
                                 </li>
                             ) : (
-                                <li><Link to="/login" className="dropdown-item">Zaloguj się</Link></li>
+                                <li>
+                                    <Link to="/login" className="dropdown-item">
+                                        Zaloguj się
+                                    </Link>
+                                </li>
                             )}
-                            <li><Link to="/" className="dropdown-item">Opcje</Link></li>
+                            <li>
+                                <Link to="/" className="dropdown-item">
+                                    Opcje
+                                </Link>
+                            </li>
                             <li>
                                 <Link
                                     to="/login"

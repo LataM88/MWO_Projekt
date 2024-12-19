@@ -78,26 +78,33 @@ const Login = (props) => {
             },
             body: JSON.stringify({ email, password })
         })
-        .then(response => response.json())
-        .then(data => {
-            console.log("Odpowiedź serwera:", data);
-            if (data.message === 'success') {
-                localStorage.setItem("user", JSON.stringify({
-                    email,
-                    userId: data.userId // Zapisujemy userId
-                }));
-                // After successful login, trigger 2FA step if necessary
-                setIsTwoFactorRequired(true);
-            } else if (data.message === 'Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.') {
-                              window.alert('Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.');
-                          } else {
-                              window.alert("Błędny email lub hasło!");
-            }
-        })
-        .catch(error => {
-            console.error('Błąd logowania:', error);
-        });
+            .then(response => response.json())
+            .then(data => {
+                console.log("Odpowiedź serwera:", data); // Zaloguj odpowiedź serwera
+
+                if (data.message === 'success') {
+                    // Zapisujemy dane użytkownika w localStorage
+                    const userData = {
+                        email,
+                        userId: data.userId // Zapisujemy userId
+                    };
+
+                    console.log("Zapisanie danych do localStorage:", userData); // Zaloguj dane przed zapisaniem
+                    localStorage.setItem("user", JSON.stringify(userData));
+
+                    // After successful login, trigger 2FA step if necessary
+                    setIsTwoFactorRequired(true);
+                } else if (data.message === 'Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.') {
+                    window.alert('Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.');
+                } else {
+                    window.alert("Błędny email lub hasło!");
+                }
+            })
+            .catch(error => {
+                console.error('Błąd logowania:', error);
+            });
     };
+
 
     const verifyTwoFactorCode = () => {
         setVerificationCodeError("");
@@ -110,6 +117,7 @@ const Login = (props) => {
         // Call the verify-2fa endpoint
         fetch("http://localhost:3080/verify-2fa", {
             method: "POST",
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -122,7 +130,6 @@ const Login = (props) => {
         .then(data => {
             if (data.message === 'Weryfikacja pomyślna') {
                 const existingUser = JSON.parse(localStorage.getItem("user")) || {};
-
                 const updatedUser = {
                     ...existingUser,
                     token: data.token,
