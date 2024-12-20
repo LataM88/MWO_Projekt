@@ -162,3 +162,11 @@ footer p {
 .icon-twitter {
     font-size: 30px;
 }
+
+.globalError {
+    color: #ff4d4f; /* Kolor czerwony dla komunikatu o błędzie */
+    font-size: 14px; /* Rozmiar czcionki komunikatu */
+    margin-top: 10px; /* Odstęp od elementów powyżej */
+    text-align: center; /* Wyśrodkowanie komunikatu */
+    padding: 10px; /* Padding wewnętrzny dla lepszego wyglądu */
+}
