@@ -13,12 +13,14 @@ const Login = (props) => {
     const [verificationCode, setVerificationCode] = useState(""); // Add state for the 2FA code
     const [verificationCodeError, setVerificationCodeError] = useState(""); // Add error state for the code
     const [isTwoFactorRequired, setIsTwoFactorRequired] = useState(false); // Track if 2FA is required
+    const [globalError, setGlobalError] = useState(""); // Global error state
     const navigate = useNavigate();
 
     const onButtonClick = () => {
         setEmailError("");
         setPasswordError("");
         setVerificationCodeError(""); // Reset verification error
+        setGlobalError(""); // Reset global error
 
         if (email === "") {
             setEmailError("Proszę wprowadź email");
@@ -92,22 +94,25 @@ const Login = (props) => {
                     console.log("Zapisanie danych do localStorage:", userData); // Zaloguj dane przed zapisaniem
                     localStorage.setItem("user", JSON.stringify(userData));
 
-                    // After successful login, trigger 2FA step if necessary
+                    // Po pomyślnym zalogowaniu, jeśli wymagana jest weryfikacja 2FA:
                     setIsTwoFactorRequired(true);
-                } else if (data.message === 'Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.') {
-                    window.alert('Konto nie zostało aktywowane. Sprawdź swój e-mail, aby je aktywować.');
+
+                    // Ustawiamy komunikat o wysłaniu kodu 2FA
+                    setGlobalError("Kod 2FA został wysłany na Twój email.");
                 } else {
-                    window.alert("Kod weryfikacyjny już wysłany, spróbuj ponownie później!");
+                    // Zaktualizowanie globalError z komunikatem z serwera
+                    setGlobalError(data.message); // Przechwytywanie komunikatu błędu z odpowiedzi serwera
                 }
             })
             .catch(error => {
                 console.error('Błąd logowania:', error);
+                setGlobalError("Wystąpił błąd podczas logowania. Spróbuj ponownie.");
             });
     };
 
-
     const verifyTwoFactorCode = () => {
         setVerificationCodeError("");
+        setGlobalError(""); // Reset global error on verification step
 
         if (verificationCode === "") {
             setVerificationCodeError("Proszę wprowadź kod weryfikacyjny");
@@ -144,6 +149,7 @@ const Login = (props) => {
         })
         .catch(error => {
             console.error('Błąd weryfikacji 2FA:', error);
+            setGlobalError("Wystąpił błąd podczas weryfikacji kodu 2FA.");
         });
     };
 
@@ -199,6 +205,9 @@ const Login = (props) => {
                         value="Zaloguj"
                     />
                 </div>
+
+                {/* Global error display */}
+                {globalError && <div className="globalError">{globalError}</div>}
 
                 {/* 2FA Step */}
                 {isTwoFactorRequired && (
