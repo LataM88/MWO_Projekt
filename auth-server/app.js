@@ -749,7 +749,7 @@ app.post('/messages', async (req, res) => {
         // Broadcast the message to the receiver using WebSocket
         wss.clients.forEach(client => {
             if (client.readyState === client.OPEN) {
-                client.send(JSON.stringify({ senderId, receiverId, content }));
+                client.send(JSON.stringify({ senderId, receiverId, content, timestamp: new Date().toISOString() }));
             }
         });
 
@@ -760,6 +760,7 @@ app.post('/messages', async (req, res) => {
     }
 });
 
+// Endpoint do pobierania wiadomości
 app.get('/messages/:userId/:receiverId', async (req, res) => {
     let { userId, receiverId } = req.params;
 

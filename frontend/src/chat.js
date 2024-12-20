@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './chat.css';
-import { debounce } from 'lodash';
 
 function Chat() {
     const { userId } = useParams();
@@ -15,62 +14,17 @@ function Chat() {
     const currentUser = JSON.parse(localStorage.getItem('user'));
     const ws = useRef(null);
 
-    const getMessagesFromStorage = () => {
-        try {
-            const savedMessages = JSON.parse(localStorage.getItem('messages'));
-            return Array.isArray(savedMessages) ? savedMessages : [];
-        } catch (error) {
-            console.error('Error parsing messages from localStorage:', error);
-            return [];
-        }
-    };
-
-    useEffect(() => {
-        if (!currentUser || !currentUser.userId) return;
-
-        const sendActivity = async () => {
-            try {
-                const response = await fetch('http://localhost:3080/api/activity', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: currentUser.userId }),
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to send activity');
-                }
-            } catch (error) {
-                console.error('Error updating activity:', error);
-            }
-        };
-
-        const handleActivity = debounce(sendActivity, 2000);
-
-        window.addEventListener('mousemove', handleActivity);
-        window.addEventListener('keydown', handleActivity);
-
-        const interval = setInterval(sendActivity, 60000);
-
-        return () => {
-            window.removeEventListener('mousemove', handleActivity);
-            window.removeEventListener('keydown', handleActivity);
-            clearInterval(interval);
-        };
-    }, [currentUser]);
-
+    // Fetching users and their online status
     useEffect(() => {
         const fetchUsersAndStatus = async () => {
             try {
                 const response = await fetch("http://localhost:3080/api/users");
                 if (response.ok) {
                     const data = await response.json();
-
-                    // Filter out the current user
                     const filteredData = data.filter(user => user.id !== currentUser.userId);
                     setUsers(filteredData);
                     setFilteredUsers(filteredData);
 
-                    // Fetch online status for all users
                     const status = {};
                     for (let user of filteredData) {
                         const statusResponse = await fetch(`http://localhost:3080/api/isonline/${user.id}`);
@@ -87,12 +41,11 @@ function Chat() {
         };
 
         fetchUsersAndStatus();
-
-        // Poll online status every 10 seconds
         const interval = setInterval(fetchUsersAndStatus, 10000);
         return () => clearInterval(interval);
     }, [currentUser.userId]);
 
+    // Fetching messages from the server when the active user changes
     useEffect(() => {
         if (activeUser) {
             const fetchMessages = async () => {
@@ -100,13 +53,7 @@ function Chat() {
                     const response = await fetch(`http://localhost:3080/messages/${currentUser.userId}/${activeUser.id}`);
                     const data = await response.json();
                     if (data && Array.isArray(data.messages)) {
-                        const allMessages = getMessagesFromStorage();
-                        const updatedMessages = [...allMessages, ...data.messages];
-                        localStorage.setItem('messages', JSON.stringify(updatedMessages));
-                        setMessages(updatedMessages.filter(msg =>
-                            (msg.senderId === currentUser.userId && msg.receiverId === activeUser.id) ||
-                            (msg.senderId === activeUser.id && msg.receiverId === currentUser.userId)
-                        ));
+                        setMessages(data.messages);
                     } else {
                         setMessages([]);
                     }
@@ -118,88 +65,73 @@ function Chat() {
         }
     }, [activeUser, currentUser.userId]);
 
+    // Setting up WebSocket connection for real-time updates
     useEffect(() => {
         ws.current = new WebSocket('ws://localhost:3080');
-    
+
         ws.current.onopen = () => {
             console.log('WebSocket connected');
         };
-    
+
         ws.current.onmessage = (event) => {
             const newMessage = JSON.parse(event.data);
-            if (!newMessage.timestamp) {
-                newMessage.timestamp = new Date().toISOString();
-            }
-    
-            setMessages((prevMessages) => {
-                const exists = prevMessages.some(
-                    (msg) => msg.senderId === newMessage.senderId && msg.timestamp === newMessage.timestamp
-                );
-                if (!exists) {
-                    const updatedMessages = [...prevMessages, newMessage];
-                    localStorage.setItem('messages', JSON.stringify(updatedMessages));
-                    return updatedMessages;
-                } else {
-                    return prevMessages;
-                }
-            });
+            setMessages((prevMessages) => [...prevMessages, newMessage]); // Add new message to the list
         };
-    
+
         return () => {
             if (ws.current) {
                 ws.current.close();
             }
         };
     }, []);
-    
-        const formatTime = (timestamp) => {
-            const date = new Date(timestamp);
-            if (isNaN(date.getTime())) return '';
-            return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-        };
-    
-        const handleSendMessage = async () => {
-            if (message && activeUser) {
-                const timestamp = new Date().toISOString();
-    
-                const newMessage = {
-                    senderId: currentUser.userId,
-                    receiverId: activeUser.id,
-                    content: message,
-                    timestamp,
-                };
-    
-                try {
-                    const response = await fetch('http://localhost:3080/messages', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(newMessage),
-                    });
-    
-                    if (response.ok) {
-                        const updatedMessages = [...messages, newMessage];
-                        localStorage.setItem('messages', JSON.stringify(updatedMessages));
-                        setMessages(updatedMessages);
-                        setMessage('');
-                    } else {
-                        console.error('Failed to send message:', response.statusText);
-                    }
-                } catch (error) {
-                    console.error('Error sending message:', error);
+
+    const formatTime = (timestamp) => {
+        const date = new Date(timestamp);
+        if (isNaN(date.getTime())) return '';
+        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    };
+
+    // Send message to the server and broadcast to WebSocket clients
+    const handleSendMessage = async () => {
+        if (message && activeUser) {
+            const timestamp = new Date().toISOString();
+
+            const newMessage = {
+                senderId: currentUser.userId,
+                receiverId: activeUser.id,
+                content: message,
+                timestamp,
+            };
+
+            try {
+                const response = await fetch('http://localhost:3080/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newMessage),
+                });
+
+                if (response.ok) {
+                    // Message is already added through WebSocket connection
+                    setMessage('');
+                } else {
+                    console.error('Failed to send message:', response.statusText);
                 }
+            } catch (error) {
+                console.error('Error sending message:', error);
             }
-        };
-    
-        const handleKeyPress = (e) => {
-            if (e.key === 'Enter') {
-                handleSendMessage();
-            }
-        };
-    
-        const handleSearch = (e) => {
-            const query = e.target.value.toLowerCase();
-            setFilteredUsers(users.filter(user => user.email.toLowerCase().includes(query)));
-        };
+        }
+    };
+
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            handleSendMessage();
+        }
+    };
+
+    const handleSearch = (e) => {
+        const query = e.target.value.toLowerCase();
+        setFilteredUsers(users.filter(user => user.email.toLowerCase().includes(query)));
+    };
 
     return (
         <div className="chat-container">
@@ -232,7 +164,6 @@ function Chat() {
                     ))}
                 </div>
             </div>
-
 
             <div className="chat-box">
                 {activeUser ? (
