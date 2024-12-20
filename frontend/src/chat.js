@@ -120,90 +120,86 @@ function Chat() {
 
     useEffect(() => {
         ws.current = new WebSocket('ws://localhost:3080');
-
+    
         ws.current.onopen = () => {
             console.log('WebSocket connected');
         };
-
+    
         ws.current.onmessage = (event) => {
             const newMessage = JSON.parse(event.data);
-
-            if (newMessage.type === 'activity') {
-                setUserOnlineStatus((prevStatus) => ({
-                    ...prevStatus,
-                    [newMessage.userId]: newMessage.isOnline,
-                }));
+            if (!newMessage.timestamp) {
+                newMessage.timestamp = new Date().toISOString();
             }
-
-            if (newMessage.type === 'message') {
-                if (!newMessage.timestamp) {
-                    newMessage.timestamp = new Date().toISOString();
+    
+            setMessages((prevMessages) => {
+                const exists = prevMessages.some(
+                    (msg) => msg.senderId === newMessage.senderId && msg.timestamp === newMessage.timestamp
+                );
+                if (!exists) {
+                    const updatedMessages = [...prevMessages, newMessage];
+                    localStorage.setItem('messages', JSON.stringify(updatedMessages));
+                    return updatedMessages;
+                } else {
+                    return prevMessages;
                 }
-
-                setMessages((prevMessages) => {
-                    const exists = prevMessages.some(
-                        (msg) => msg.senderId === newMessage.senderId && msg.timestamp === newMessage.timestamp
-                    );
-                    if (!exists) {
-                        const updatedMessages = [...prevMessages, newMessage];
-                        localStorage.setItem('messages', JSON.stringify(updatedMessages));
-                        return updatedMessages;
-                    } else {
-                        return prevMessages;
-                    }
-                });
-            }
+            });
         };
-
+    
         return () => {
             if (ws.current) {
                 ws.current.close();
             }
         };
     }, []);
-
-    const handleSendMessage = async () => {
-        if (message && activeUser) {
-            const timestamp = new Date().toISOString();
-
-            const newMessage = {
-                senderId: currentUser.userId,
-                receiverId: activeUser.id,
-                content: message,
-                timestamp,
-            };
-
-            try {
-                const response = await fetch('http://localhost:3080/messages', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(newMessage),
-                });
-
-                if (response.ok) {
-                    const updatedMessages = [...messages, newMessage];
-                    localStorage.setItem('messages', JSON.stringify(updatedMessages));
-                    setMessages(updatedMessages);
-                    setMessage('');
-                } else {
-                    console.error('Failed to send message:', response.statusText);
+    
+        const formatTime = (timestamp) => {
+            const date = new Date(timestamp);
+            if (isNaN(date.getTime())) return '';
+            return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+        };
+    
+        const handleSendMessage = async () => {
+            if (message && activeUser) {
+                const timestamp = new Date().toISOString();
+    
+                const newMessage = {
+                    senderId: currentUser.userId,
+                    receiverId: activeUser.id,
+                    content: message,
+                    timestamp,
+                };
+    
+                try {
+                    const response = await fetch('http://localhost:3080/messages', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newMessage),
+                    });
+    
+                    if (response.ok) {
+                        const updatedMessages = [...messages, newMessage];
+                        localStorage.setItem('messages', JSON.stringify(updatedMessages));
+                        setMessages(updatedMessages);
+                        setMessage('');
+                    } else {
+                        console.error('Failed to send message:', response.statusText);
+                    }
+                } catch (error) {
+                    console.error('Error sending message:', error);
                 }
-            } catch (error) {
-                console.error('Error sending message:', error);
             }
-        }
-    };
-
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter') {
-            handleSendMessage();
-        }
-    };
-
-    const handleSearch = (e) => {
-        const query = e.target.value.toLowerCase();
-        setFilteredUsers(users.filter(user => user.email.toLowerCase().includes(query)));
-    };
+        };
+    
+        const handleKeyPress = (e) => {
+            if (e.key === 'Enter') {
+                handleSendMessage();
+            }
+        };
+    
+        const handleSearch = (e) => {
+            const query = e.target.value.toLowerCase();
+            setFilteredUsers(users.filter(user => user.email.toLowerCase().includes(query)));
+        };
 
     return (
         <div className="chat-container">
@@ -267,7 +263,7 @@ function Chat() {
                                 type="text"
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
-                                onKeyPress={handleKeyPress} // Obsługa klawisza Enter
+                                onKeyPress={handleKeyPress}
                                 placeholder="Wpisz swoją wiadomość"
                             />
                             <button onClick={handleSendMessage}>Wyślij</button>
