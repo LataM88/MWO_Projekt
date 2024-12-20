@@ -931,7 +931,7 @@ app.get('/api/isonline/:userId', async (req, res) => {
 
         // Calculate the difference in seconds
         const timeDiffSeconds = (new Date() - lastActiveUTC) / 1000;
-        const isOnline = timeDiffSeconds  < 15; // Last active within the last 5 minutes
+        const isOnline = timeDiffSeconds  < 60; // Last active within the last 1 minutes
 
         // Send the result as a response
         res.status(200).json({ isOnline });
