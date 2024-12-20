@@ -218,6 +218,9 @@ function Chat() {
                             className="user"
                             onClick={() => setActiveUser(user)}
                         >
+                            <div className="status-dot">
+                                <span className={`dot ${userOnlineStatus[user.id] ? 'online-dot' : 'offline-dot'}`}></span>
+                            </div>
                             <img src={user.image} alt={user.email} className="user-image" />
                             <div className="user-info">
                                 <span>{user.imie + ' ' + user.nazwisko}</span>
@@ -229,6 +232,7 @@ function Chat() {
                     ))}
                 </div>
             </div>
+
 
             <div className="chat-box">
                 {activeUser ? (

@@ -301,3 +301,28 @@ div p {
     margin-bottom: 10px; /* Dodanie odstępu między tekstem a następnymi elementami */
     font-family: 'Langar', cursive;
 }
+
+/* Kropka statusu */
+.status-dot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px; /* Odstęp między kropką a awatarem */
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Zielona kropka dla online */
+.online-dot {
+    background-color: #2bd500; /* Zielony */
+}
+
+/* Czerwona kropka dla offline */
+.offline-dot {
+    background-color: #d9534f; /* Czerwony */
+}
