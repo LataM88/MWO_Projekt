@@ -10,6 +10,7 @@ import Chat from './chat';
 import ForgotPassword from './zapomnialesHasla';
 import Activate from './activate';
 import PostBoard from './PostBoard';
+import ActivityMonitor from './components/ActivityMonitor';
 
 import './App.css';
 
@@ -65,6 +66,7 @@ function AppContent() {
     return (
         <div className="App">
             {loggedIn && <Navbar setLoggedIn={setLoggedIn} setEmail={setEmail} onLogout={handleLogout} />}
+            {loggedIn && <ActivityMonitor/>}
             <Routes>
                 {/* Ścieżki dostępne dla wszystkich użytkowników */}
                 <Route path="/" element={<Home email={email} loggedIn={loggedIn} setLoggedIn={setLoggedIn} />} />
@@ -133,3 +135,4 @@ function App() {
 }
 
 export default App;
+

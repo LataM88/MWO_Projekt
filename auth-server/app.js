@@ -1050,6 +1050,71 @@ app.post('/api/comments', async (req, res) => {
     }
 });
 
+// Endpoint to update the user's last active time
+
+app.post('/api/activity', async (req, res) => {
+    const { userId } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ message: 'Brakuje identyfikatora użytkownika.' });
+    }
+
+    try {
+        // Get current time in UTC and adjust it by one hour
+        const now = new Date(new Date().getTime() + 3600000).toISOString(); // +3600000 adds 1 hour in milliseconds
+        await supabase
+            .from('users')
+            .update({ last_active: now })
+            .eq('id', userId);
+
+        res.status(200).json({ message: 'Status użytkownika został zaktualizowany.' });
+    } catch (error) {
+        console.error('Błąd podczas aktualizacji aktywności użytkownika:', error);
+        res.status(500).json({ message: 'Błąd serwera.' });
+    }
+});
+
+// Endpoint to check if a user is online
+app.get('/api/isonline/:userId', async (req, res) => {
+    const { userId } = req.params;
+
+    if (!userId) {
+        return res.status(400).json({ message: 'Brakuje identyfikatora użytkownika.' });
+    }
+
+    try {
+        // Fetch user data from the database
+        const { data, error } = await supabase
+            .from('users')
+            .select('last_active')
+            .eq('id', userId)
+            .single();
+
+        if (error) {
+            return res.status(500).json({ message: 'Błąd podczas pobierania danych.' });
+        }
+
+        // Convert last active time to UTC Date object
+        const lastActiveUTC = new Date(data.last_active);
+
+        // Get the current server time in UTC
+        const now = new Date().toISOString();
+
+        // Calculate the difference in seconds
+        const timeDiffSeconds = (new Date() - lastActiveUTC) / 1000;
+        const isOnline = timeDiffSeconds  < 60; // Last active within the last 1 minutes
+
+        // Send the result as a response
+        res.status(200).json({ isOnline });
+    } catch (error) {
+        console.error('Błąd podczas sprawdzania statusu online użytkownika:', error);
+        res.status(500).json({ message: 'Błąd serwera.' });
+    }
+});
+
+
+
+
 
 // Starting server
 server.listen(3080, () => {
