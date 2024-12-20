@@ -879,7 +879,8 @@ app.post('/api/comments', async (req, res) => {
     }
 });
 
-// Endpoint do aktualizacji aktywności użytkownika
+// Endpoint to update the user's last active time
+
 app.post('/api/activity', async (req, res) => {
     const { userId } = req.body;
 
@@ -888,8 +889,8 @@ app.post('/api/activity', async (req, res) => {
     }
 
     try {
-        // Zapisz czas w UTC
-        const now = new Date().toISOString();
+        // Get current time in UTC and adjust it by one hour
+        const now = new Date(new Date().getTime() + 3600000).toISOString(); // +3600000 adds 1 hour in milliseconds
         await supabase
             .from('users')
             .update({ last_active: now })
@@ -902,6 +903,7 @@ app.post('/api/activity', async (req, res) => {
     }
 });
 
+// Endpoint to check if a user is online
 app.get('/api/isonline/:userId', async (req, res) => {
     const { userId } = req.params;
 
@@ -921,12 +923,15 @@ app.get('/api/isonline/:userId', async (req, res) => {
             return res.status(500).json({ message: 'Błąd podczas pobierania danych.' });
         }
 
+        // Convert last active time to UTC Date object
+        const lastActiveUTC = new Date(data.last_active);
+
         // Get the current server time in UTC
         const now = new Date().toISOString();
-        const lastActive = new Date(data.last_active).toISOString();
 
         // Calculate the difference in seconds
-        const isOnline = (new Date(now) - new Date(lastActive)) / 1000 < 300; // Last active within the last 5 minutes
+        const timeDiffSeconds = (new Date() - lastActiveUTC) / 1000;
+        const isOnline = timeDiffSeconds  < 15; // Last active within the last 5 minutes
 
         // Send the result as a response
         res.status(200).json({ isOnline });
