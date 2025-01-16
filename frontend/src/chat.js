@@ -56,7 +56,13 @@ function Chat() {
                     const response = await fetch(`http://localhost:3080/messages/${currentUser.userId}/${activeUser.id}`);
                     const data = await response.json();
                     if (data && Array.isArray(data.messages)) {
-                        setMessages(data.messages);
+                        const transformedMessages = data.messages.map(msg => ({
+                            ...msg,
+                            senderId: msg.sender_id,
+                            receiverId: msg.receiver_id,
+                            timestamp: msg.timestamp,
+                        }));
+                        setMessages(transformedMessages);
                     } else {
                         setMessages([]);
                     }
@@ -110,6 +116,7 @@ function Chat() {
                 });
 
                 if (response.ok) {
+                    ws.current.send(JSON.stringify(newMessage)); // Send via WebSocket
                     setMessage('');
                     scrollToBottom();
                 } else {
@@ -131,6 +138,9 @@ function Chat() {
         const query = e.target.value.toLowerCase();
         setFilteredUsers(users.filter(user => user.email.toLowerCase().includes(query)));
     };
+
+    // Make sure users are loaded before rendering the chat messages
+    const isUsersLoaded = users.length > 0;
 
     return (
         <div className="chat-container">
@@ -176,20 +186,31 @@ function Chat() {
                         </div>
 
                         <div className="messages">
-                            {messages.map((msg, index) => {
-                                const sender = users.find(user => user.id === msg.senderId);
-                                return (
-                                    <div key={index} className={`message ${msg.senderId === currentUser.userId ? 'sent' : 'received'}`}>
-                                        {sender && (
-                                            <div className="message-sender">
-                                                <span className="sender-name">{sender.imie} {sender.nazwisko}</span>
-                                            </div>
-                                        )}
-                                        <div className="message-text">{msg.content}</div>
-                                        <div className="message-time">{new Date(msg.timestamp).toLocaleTimeString()}</div>
-                                    </div>
-                                );
-                            })}
+                            {isUsersLoaded ? (
+                                messages.map((msg, index) => {
+                                    const sender = users.find(user => user.id === msg.senderId);
+                                    // If sender is not found and the message was sent by the current user
+                                    const isSentByCurrentUser = msg.senderId === currentUser.userId;
+
+                                    return (
+                                        <div key={index} className={`message ${isSentByCurrentUser ? 'sent' : 'received'}`}>
+                                            {isSentByCurrentUser || sender ? (
+                                                <div className="message-sender">
+                                                    <span className="sender-name">
+                                                        {isSentByCurrentUser
+                                                            ? currentUser.imie + ' ' + currentUser.nazwisko
+                                                            : sender?.imie + ' ' + sender?.nazwisko || 'Unknown sender'}
+                                                    </span>
+                                                </div>
+                                            ) : null}
+                                            <div className="message-text">{msg.content}</div>
+                                            <div className="message-time">{new Date(msg.timestamp).toLocaleTimeString()}</div>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <p>Loading users...</p>
+                            )}
                             <div ref={messagesEndRef}></div> {/* Element for scrolling */}
                         </div>
 
@@ -215,3 +236,4 @@ function Chat() {
 }
 
 export default Chat;
+
