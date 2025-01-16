@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './navbar.css';
+import Invitations from "./Invitations.jsx"
 
 const Navbar = ({ setLoggedIn, setEmail }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -63,6 +64,7 @@ const Navbar = ({ setLoggedIn, setEmail }) => {
             </div>
 
             <div className="clock">{time}</div>
+            {<Invitations/>}
             <ul className="nav-links">
                 <li className="dropdown" onMouseEnter={toggleDropdown} onMouseLeave={toggleDropdown}>
                     <p>MENU</p>
