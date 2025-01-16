@@ -13,6 +13,7 @@ function Profile() {
     const [posts, setPosts] = useState([]);
     const [activeTab, setActiveTab] = useState('opis');
     const navigate = useNavigate();
+    const [userOnlineStatus, setUserOnlineStatus] = useState({});
 
     const loggedInUser = JSON.parse(localStorage.getItem('user'));
     const loggedInUserId = loggedInUser ? loggedInUser.userId : null;
@@ -26,6 +27,28 @@ function Profile() {
         const linkifiedText = text.replace(/(https?:\/\/\S+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
         return linkifiedText.replace(/\n/g, '<br />');
     };
+
+
+    useEffect(() => {
+        const fetchUserOnlineStatus = async () => {
+            try {
+                const response = await fetch(`http://localhost:3080/api/isonline/${userId}`, {
+                    credentials: 'include',
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setUserOnlineStatus({ [userId]: data.isOnline });
+                } else {
+                    console.error('Błąd podczas pobierania statusu online.');
+                }
+            } catch (error) {
+                console.error('Błąd podczas pobierania statusu online:', error);
+            }
+        };
+
+        fetchUserOnlineStatus();
+    }, [userId]);
 
     useEffect(() => {
         const fetchUserPosts = async () => {
@@ -147,8 +170,8 @@ function Profile() {
                     className="profile-image"
                 />
                 <div className="profile-actions">
-                    <span className={`status ${user.isActive ? '' : 'inactive'}`}>
-                        {user.isActive ? 'Aktywny' : 'Nie aktywny'}
+                    <span className={`status ${userOnlineStatus[user.id] ? 'online' : 'offline'}`}>
+                        {userOnlineStatus[user.id] ? 'Dostępny' : 'Niedostępny'}
                     </span>
                     <button className="inputButtonProfile" onClick={(e) => handleChatClick(user.id, e)}>Wyślij wiadomość</button>
                 </div>
@@ -274,4 +297,5 @@ function Profile() {
 }
 
 export default Profile;
+
 
