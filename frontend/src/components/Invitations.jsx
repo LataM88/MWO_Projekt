@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Invitations.css';
+import icon from './../img/invite.png';
 
 const Invitations = ({ userId }) => {
   const [tab, setTab] = useState('sent');
@@ -7,11 +8,11 @@ const Invitations = ({ userId }) => {
   const [receivedInvitations, setReceivedInvitations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false); // Dropdown toggle state
 
   const storedData = localStorage.getItem('user');
   const userData = storedData ? JSON.parse(storedData) : null;
 
-  // Fetch Sent Invitations
   const fetchSentInvitations = async (senderId) => {
     setLoading(true);
     setError(null);
@@ -35,7 +36,6 @@ const Invitations = ({ userId }) => {
     }
   };
 
-  // Fetch Received Invitations
   const fetchReceivedInvitations = async () => {
     setLoading(true);
     setError(null);
@@ -70,7 +70,6 @@ const Invitations = ({ userId }) => {
     }
   }, [tab, userData?.userId]);
 
-  // Handle Accept Invitation
   const handleAccept = async (senderId) => {
     try {
       const response = await fetch('http://localhost:3080/api/friends/add', {
@@ -89,86 +88,124 @@ const Invitations = ({ userId }) => {
     }
   };
 
-  // Handle Delete Invitation
   const handleDelete = async (senderId, receiverId) => {
-      try {
-        const response = await fetch(
-          `http://localhost:3080/api/invitations/del/${senderId}/${receiverId}`,
-          {
-            method: 'DELETE',
-            headers: {
-              Authorization: `Bearer ${userData?.token}`,
-            }
-          }
-        );
-
-        // Check if the response is successful
-        if (!response.ok) {
-          const errorMessage = await response.json();  // Get the error message from the server response
-          throw new Error(errorMessage.message || 'Failed to delete invitation');
+    try {
+      const response = await fetch(
+        `http://localhost:3080/api/invitations/del/${senderId}/${receiverId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${userData?.token}`,
+          },
         }
+      );
 
-        // If the deletion was successful, update the UI accordingly
-        tab === 'received' ? fetchReceivedInvitations() : fetchSentInvitations(userData.userId);
-      } catch (error) {
-        // Log any error that occurred during the delete process
-        console.error('Error deleting invitation:', error);
+      if (!response.ok) {
+        const errorMessage = await response.json();
+        throw new Error(errorMessage.message || 'Failed to delete invitation');
       }
+
+      tab === 'received' ? fetchReceivedInvitations() : fetchSentInvitations(userData.userId);
+    } catch (error) {
+      console.error('Error deleting invitation:', error);
+    }
   };
-
-
 
   return (
     <div className="invitations-container">
-      <h1>Invitations</h1>
+      <div className="invitations-dropdown">
+        {/* Dropdown Toggle Button */}
+        <button
+          className="invitations-dropdown-toggle"
+          onClick={() => setIsDropdownOpen((prev) => !prev)}
+        >
+          <img
+            src={icon}
+            alt="Toggle Invitations"
+            className="invitations-avatar-main"
+          />
+        </button>
 
-      {/* Tabs */}
-      <div className="invitations-tabs">
-        <button
-          onClick={() => setTab('sent')}
-          className={`invitations-tab-button ${tab === 'sent' ? 'invitations-tab-button-active' : ''}`}
-        >
-          Sent Invitations
-        </button>
-        <button
-          onClick={() => setTab('received')}
-          className={`invitations-tab-button ${tab === 'received' ? 'invitations-tab-button-active' : ''}`}
-        >
-          Received Invitations
-        </button>
+        {/* Dropdown Menu */}
+        {isDropdownOpen && (
+          <div className="invitations-dropdown-menu">
+            <h1 className="invitations-title">Zaproszenia</h1>
+
+            {/* Tabs */}
+            <div className="invitations-tabs">
+              <button
+                className={`invitations-tabs-button ${tab === 'sent' ? 'selected' : ''}`}
+                onClick={() => setTab('sent')}
+              >
+                Wysłane
+              </button>
+              <button
+                className={`invitations-tabs-button ${tab === 'received' ? 'selected' : ''}`}
+                onClick={() => setTab('received')}
+              >
+                Otrzymane
+              </button>
+            </div>
+
+            {/* Loading, Error, and Invitations */}
+            {loading && <p className="invitations-loading">Ładuje...</p>}
+            {error && <p className="invitations-error-message">{error}</p>}
+            {!loading && !error && (
+              <ul className="invitations-list">
+                {(tab === 'received' ? receivedInvitations : sentInvitations).map((invitation) => (
+                  <li key={invitation.users.id} className="invitations-item">
+                    {/* User Name */}
+                    <span className="invitations-name">
+                      {invitation.users.imie} {invitation.users.nazwisko}
+                    </span>
+
+                    {/* Profile Image and Action Buttons */}
+                    <div className="invitations-item-details">
+                      <img
+                        src={invitation.users.image}
+                        alt={`${invitation.users.imie} ${invitation.users.nazwisko}`}
+                        className="invitations-avatar"
+                      />
+
+                      {/* Action Buttons */}
+                      <div className="invitations-buttons">
+                        {tab === 'received' ? (
+                          <>
+                            <button
+                              className="invitations-button"
+                              onClick={() => handleAccept(invitation.users.id)}
+                            >
+                              Przyjmij
+                            </button>
+                            <button
+                              className="invitations-button"
+                              onClick={() => handleDelete(invitation.users.id, userData.userId)}
+                            >
+                              Odrzuć
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            className="invitations-button"
+                            onClick={() => handleDelete(userData.userId, invitation.users.id)}
+                          >
+                            Anuluj
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
-
-      {/* Loading and Error */}
-      {loading && <p>Loading...</p>}
-      {error && <p className="invitations-error-message">{error}</p>}
-
-      {/* Invitations List */}
-      {!loading && !error && (
-        <ul className="invitations-list">
-          {(tab === 'received' ? receivedInvitations : sentInvitations).map((invitation) => (
-            <li key={invitation.users.id} className="invitations-list-item">
-              <p>
-                <strong>{invitation.users.imie} {invitation.users.nazwisko}</strong>
-              </p>
-              <img
-                src={invitation.users.image}
-                alt={`${invitation.users.imie} ${invitation.users.nazwisko}`}
-                className="invitations-list-item-image"
-              />
-              {tab === 'received' ? (
-                <>
-                  <button onClick={() => handleAccept(invitation.users.id)}>Przyjmij</button>
-                  <button onClick={() => handleDelete(invitation.users.id, userData.userId)}>Odrzuć</button>
-                </>
-              ) : (
-                <button onClick={() => handleDelete(userData.userId, invitation.users.id)}>Anuluj</button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   );
+
+
+
 };
 
 export default Invitations;

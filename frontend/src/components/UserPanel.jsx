@@ -281,17 +281,17 @@ const UserPanel = () => {
               </span>
               {dropdownUserId === user.id && (
                 <div className="user-options-dropdown">
-                  <button onClick={(e) => handleProfileClick(user.id, e)} className="user-options-button">Profile</button>
+                  <button onClick={(e) => handleProfileClick(user.id, e)} className="user-options-button">Profil</button>
                   <button onClick={(e) => handleChatClick(user.id, e)} className="user-options-button">Chat</button>
                   {isFriend(user.id) ? (
                     <button onClick={(e) => handleUnfriend(userData.userId, user.id, e)}
                         className="user-options-button">
-                      Unfriend
+                      Usuń ze znajomych
                     </button>
                   ) : (
                     <button onClick={(e) => handleSend(userData.userId, user.id, e)}
                         className="user-options-button">
-                      Send Invitation
+                      Wyślij Zaproszenie
                     </button>
                   )}
                 </div>
