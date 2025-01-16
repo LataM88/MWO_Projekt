@@ -1113,6 +1113,266 @@ app.get('/api/isonline/:userId', async (req, res) => {
     }
 });
 
+app.post('/api/invitations/send', async (req, res) => {
+  const { sender_id, receiver_id } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from('invitations')
+      .insert([{ sender_id, receiver_id }]);
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(200).json({ message: 'Invitation sent successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to send invitation' });
+  }
+});
+
+
+app.get('/api/invitations/sent/:senderId', async (req, res) => {
+  const { senderId } = req.params;
+
+  try {
+    // Fetch sent invitations with user details
+    const { data, error } = await supabase
+      .from('invitations')
+      .select('users:receiver_id(id, imie, nazwisko, image)')
+      .eq('sender_id', senderId);
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error fetching sent invitations:", error);
+    res.status(500).json({ error: 'Failed to fetch sent invitations' });
+  }
+});
+
+// Endpoint to fetch received invitations
+app.get('/api/invitations/received', async (req, res) => {
+  const { receiver_id } = req.query;
+
+  try {
+    // Fetch received invitations with user details
+    const { data, error } = await supabase
+      .from('invitations')
+      .select('users:sender_id(id, imie, nazwisko, image)')
+      .eq('receiver_id', receiver_id);
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error fetching received invitations:", error);
+    res.status(500).json({ error: 'Failed to fetch received invitations' });
+  }
+});
+
+
+
+app.get('/api/friends', async (req, res) => {
+  const { user_id } = req.query;
+
+  try {
+    // Fetch all friendships involving the logged-in user (user_id)
+    const { data: friends, error: friendsError } = await supabase
+      .from('friends')
+      .select('user_id1, user_id2')
+      .or(`user_id1.eq.${user_id}, user_id2.eq.${user_id}`); // Fetch friendships
+
+    if (friendsError) {
+      throw friendsError;
+    }
+
+    // If no friends are found, return an empty list
+    if (friends.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    // Extract user IDs that are friends with the logged-in user, excluding the logged-in user itself
+    const relatedUserIds = friends.map(friend => {
+      // If user_id1 is the logged-in user, select user_id2, else select user_id1
+      return friend.user_id1 == user_id ? friend.user_id2 : friend.user_id1;
+    });
+
+    // Fetch all related users in one query, ensuring the logged-in user is excluded
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, imie, nazwisko, image')
+      .in('id', relatedUserIds);  // Use the IN operator to fetch all users in one go
+
+    if (usersError) {
+      throw usersError;
+    }
+
+    // Return the list of users (friends), excluding the logged-in user
+    res.status(200).json(users);
+
+  } catch (error) {
+    console.error('Error fetching friends or users:', error);
+    res.status(500).json({ error: 'Failed to fetch related users.' });
+  }
+});
+
+app.get('/api/friends/check', async (req, res) => {
+  const { user_id_1, user_id_2 } = req.query;
+
+  try {
+    // Check if there's a friendship between user_id_1 and user_id_2
+    const { data, error } = await supabase
+      .from('friends')
+      .select('user_id1, user_id2')
+      .or(`user_id1.eq.${user_id_1}, user_id2.eq.${user_id_1}`)
+      .or(`user_id1.eq.${user_id_2}, user_id2.eq.${user_id_2}`);
+
+    if (error) {
+      throw error;
+    }
+
+    // If there is a friendship between user_id_1 and user_id_2, return true
+    const isFriend = data.some(friendship =>
+      (friendship.user_id1 === user_id_1 && friendship.user_id2 === user_id_2) ||
+      (friendship.user_id1 === user_id_2 && friendship.user_id2 === user_id_1)
+    );
+
+    res.status(200).json({ isFriend });
+
+  } catch (error) {
+    console.error('Error checking friendship:', error);
+    res.status(500).json({ error: 'Failed to check friendship.' });
+  }
+});
+
+
+
+
+
+app.delete('/api/friends/del/:id1/:id2', async (req, res) => {
+  let { id1, id2 } = req.params;
+
+  // Ensure lower ID is always the first one
+  if (parseInt(id1) > parseInt(id2)) {
+    [id1, id2] = [id2, id1];
+  }
+
+  try {
+    // Validate that both IDs are numbers
+    if (isNaN(id1) || isNaN(id2)) {
+      return res.status(400).json({ error: 'Invalid user IDs' });
+    }
+
+    // Delete the friendship record
+    const { data, error } = await supabase
+      .from('friends')
+      .delete()
+      .eq('user_id1', id1)
+      .eq('user_id2', id2);
+
+    if (error) {
+      throw error;
+    }
+
+    // Handle cases where no friendship is found
+    if (data.length > 0) {
+      res.status(200).json({ message: 'Removed from friends successfully' });
+    } else {
+      res.status(404).json({ message: 'Friendship not found' });
+    }
+  } catch (error) {
+    // Catch and report any errors
+    res.status(500).json({ error: error.message || 'Failed to remove from friends' });
+  }
+});
+
+
+app.post('/api/friends/add', async (req, res) => {
+  const { sender_id, receiver_id } = req.body;
+
+  try {
+    // Step 1: Check if the users are already friends
+    const { data: existingFriendship, error: friendshipError } = await supabase
+      .from('friends')
+      .select('*')
+      .or(`user_id1.eq.${sender_id},user_id2.eq.${sender_id}`)
+      .or(`user_id1.eq.${receiver_id},user_id2.eq.${receiver_id}`);
+
+    if (friendshipError) {
+      throw friendshipError;
+    }
+
+    if (existingFriendship.length > 0) {
+      return res.status(400).json({ error: 'Already friends' });
+    }
+
+    // Step 2: Add friendship record
+    const { data: friendData, error: friendError } = await supabase
+      .from('friends')
+      .insert([{ user_id1: sender_id, user_id2: receiver_id }]);
+
+    if (friendError) {
+      throw friendError;
+    }
+
+    // Step 3: Delete the invitation in both orders after the friendship is added
+    const { error: inviteError } = await supabase
+      .from('invitations')
+      .delete()
+      .or(
+        `and(sender_id.eq.${sender_id},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${sender_id})`
+      );
+
+    if (inviteError) {
+      throw inviteError;
+    }
+
+    // Respond back with success message
+    res.status(200).json({ message: 'Added to friends successfully' });
+  } catch (error) {
+    console.error(error); // Log error for debugging
+    res.status(500).json({ error: 'Failed to add to friends' });
+  }
+});
+
+
+
+
+app.delete('/api/invitations/del/:sender_id/:receiver_id', async (req, res) => {
+  const { sender_id, receiver_id } = req.params;
+
+  try {
+    // Perform the delete operation in Supabase without returning the deleted rows
+    const { data, error, count } = await supabase
+      .from('invitations')
+      .delete()
+      .eq('sender_id', sender_id)
+      .eq('receiver_id', receiver_id);
+
+    // If there is a database error, log it and send a 500 response
+    if (error) {
+      console.error('Supabase error:', error);  // Log the error for debugging
+      return res.status(500).json({ error: 'Failed to delete invitation' });
+    }
+
+    // If no rows were affected (deleted), return a 404 response
+    if (count === 0) {
+      return res.status(404).json({ message: 'Invitation not found' });
+    }
+
+    // Successfully deleted the invitation, return a 200 response
+    res.status(200).json({ message: 'Invitation deleted successfully' });
+  } catch (error) {
+    // Catch any unexpected errors and log them
+    console.error('Internal Server Error:', error);  // Log the error for debugging
+    res.status(500).json({ error: 'Failed to delete invitation' });
+  }
+});
 
 
 
