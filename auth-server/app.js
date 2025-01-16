@@ -641,7 +641,9 @@ app.get('/user/:id',verifyAccessToken, async (req, res) => {
 app.put('/user/:id',verifyAccessToken, async (req, res) => {
     const userId = req.params.id;
     const { opis } = req.body;
-
+    if (String(req.user.userId) !== String(userId)) {
+        return res.status(403).json({ message: 'Nieautoryzowany dostęp.' });
+    }
     try {
         const { data: user, error } = await supabase
             .from('users')
@@ -676,6 +678,9 @@ app.put('/user/:id',verifyAccessToken, async (req, res) => {
 app.post('/upload-profile-image/:userId',verifyAccessToken, upload.single('image'), async (req, res) => {
     const { userId } = req.params;
     const file = req.file;
+    if (String(req.user.userId) !== String(userId)) {
+        return res.status(403).json({ message: 'Nieautoryzowany dostęp.' });
+    }
 
     if (!file) {
         return res.status(400).json({ message: 'Plik nie został przesłany.' });
