@@ -34,20 +34,21 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-const authenticateToken = (req, res, next) => {
-    const token = req.cookies.accessToken; // Pobranie tokenu z ciasteczka
-
+const verifyAccessToken = (req, res, next) => {
+    const token = req.cookies['accessToken'];
+    console.log('weryfikacja w endpointach')
+    console.log("Token w cookies:", token)
     if (!token) {
-        return res.status(401).json({ message: 'Brak tokenu' });
+        return res.status(401).json({ message: "Brak tokena, brak dostępu" });
     }
 
     jwt.verify(token, jwtSecretKey, (err, decoded) => {
         if (err) {
-            return res.status(403).json({ message: 'Nieprawidłowy lub wygasły token' });
+            return res.status(401).json({ message: "Nieprawidłowy lub wygasły token" });
         }
 
-        req.user = decoded; // Dodanie informacji o użytkowniku do żądania
-        next();
+        req.user = decoded; // Przechowujemy dane użytkownika w `req.user`
+        next(); // Przekazujemy dalej do kolejnego middleware lub kontrolera
     });
 };
 
@@ -77,16 +78,13 @@ app.get('/', (_req, res) => {
     res.send('Auth API.\nPlease use POST /auth & POST /register for authentication');
 });
 
-app.use((req, res, next) => {
-    console.log('Ciasteczka:', req.cookies); // Sprawdź wszystkie ciasteczka
-    next();
-});
+
 
 //Tokeny
 const createAccessToken = (userId, email) => {
     const payload = { userId, email };
     console.log('tworzenie accestokena')
-    return jwt.sign(payload, jwtSecretKey, { expiresIn: '15m' }); // Ważność: 15 minut
+    return jwt.sign(payload, jwtSecretKey, { expiresIn: '10m' }); // Ważność: 15 minut
 };
 
 const createRefreshToken = (userId, email) => {
@@ -656,82 +654,49 @@ app.post('/upload-profile-image/:userId', upload.single('image'), async (req, re
 
 
 app.post('/verify', (req, res) => {
-    console.log('rozpoczęcie verify');
+    console.log('sprawcanie access tokena')
     const token = req.cookies['accessToken'];
-
+    if (!token) {
+        return res.status(401).json({ message: 'Brak access tokena' });
+    }
 
     jwt.verify(token, jwtSecretKey, (err, decoded) => {
         if (err) {
-            // Jeśli access token jest nieważny, próbujemy go odświeżyć
-            console.log('Token wygasł, próbuję odświeżyć token...');
-            const refreshToken = req.cookies['refreshToken'];
-            if (!refreshToken) {
-                return res.status(401).json({ message: 'Brak refresh tokenu' });
-            }
-
-            // Weryfikacja refresh tokenu
-            jwt.verify(refreshToken, refreshTokenSecretKey, (refreshErr, refreshDecoded) => {
-                if (refreshErr) {
-                    return res.status(403).json({ message: 'Refresh token jest nieprawidłowy lub wygasł' });
-                }
-
-                // Jeśli refresh token jest ważny, tworzymy nowy access token
-                const newAccessToken = createAccessToken(refreshDecoded.userId, refreshDecoded.email);
-
-                // Ustawienie nowego ciasteczka z access tokenem
-                res.cookie('accessToken', newAccessToken, {
-                    httpOnly: true,
-                    secure: false, // Użyj `true` w produkcji
-                    sameSite: 'None',
-                    maxAge: 15 * 60 * 1000, // 15 minut
-                });
-
-                console.log('Odświeżono access token');
-                // Powtarzamy weryfikację z nowym tokenem
-                jwt.verify(newAccessToken, jwtSecretKey, (finalErr, finalDecoded) => {
-                    if (finalErr) {
-                        return res.status(401).json({ message: 'Nieprawidłowy lub wygasły token' });
-                    }
-
-                    console.log('Token zweryfikowany po odświeżeniu, decoded:', finalDecoded);
-                    res.status(200).json({ message: 'success', userId: finalDecoded.userId });
-                });
-            });
-        } else {
-            console.log('Token zweryfikowany, decoded:', decoded);
-            res.status(200).json({ message: 'success', userId: decoded.userId });
+            console.log('access token wygasł')
+            return res.status(401).json({ message: 'Nieprawidłowy lub wygasły token' });
         }
+        res.status(200).json({ message: 'success', userId: decoded.userId });
+    });
+});
+
+app.post('/refresh', (req, res) => {
+    console.log('sprawcanie refresh tokena')
+    const refreshToken = req.cookies['refreshToken'];
+    if (!refreshToken) {
+        return res.status(401).json({ message: 'Brak refresh tokena' });
+    }
+
+    jwt.verify(refreshToken, refreshTokenSecretKey, (refreshErr, refreshDecoded) => {
+        if (refreshErr) {
+            console.log('refresh token wygasł')
+            return res.status(403).json({ message: 'Refresh token jest nieprawidłowy lub wygasł' });
+        }
+
+        const newAccessToken = createAccessToken(refreshDecoded.userId, refreshDecoded.email);
+        res.cookie('accessToken', newAccessToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'None',
+            maxAge: 15 * 60 * 1000,
+        });
+
+        res.status(200).json({ message: 'Token odświeżony' });
     });
 });
 
 
 // Endpoint do przedłużenia sesji
-app.post('/refresh-token', (req, res) => {
-    const refreshToken = req.cookies['refreshToken'];
 
-    if (!refreshToken) {
-        return res.status(401).json({ message: 'Brak refresh tokenu' });
-    }
-
-    jwt.verify(refreshToken, refreshTokenSecretKey, (err, decoded) => {
-        if (err) {
-            return res.status(403).json({ message: 'Refresh token jest nieprawidłowy lub wygasł' });
-        }
-
-        // Tworzenie nowego accessToken
-        const newAccessToken = createAccessToken(decoded.userId, decoded.email);
-
-        // Ustawienie nowego ciasteczka z accessToken
-        res.cookie('accessToken', newAccessToken, {
-            httpOnly: true,
-            secure: false,
-            sameSite: 'None',
-            maxAge: 15 * 60 * 1000, // Ważność: 15 minut
-        });
-
-        res.status(200).json({ message: 'Access token odświeżony' });
-    });
-});
 
 app.post('/messages', async (req, res) => {
     const { senderId, receiverId, content } = req.body;

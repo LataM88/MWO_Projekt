@@ -25,12 +25,37 @@ function AppContent() {
 
         return fetch("http://localhost:3080/verify", {
             method: "POST",
-            credentials: "include", // To ustawienie zapewnia przesyłanie ciasteczek
+            credentials: "include", // Zapewnia przesyłanie ciasteczek (accessToken)
         })
-            .then(response => response.json())
+            .then(async (response) => {
+                if (response.status === 401) {
+                    console.log("Access token wygasł, próbuję odświeżyć...");
+
+                    // Próba odświeżenia tokena
+                    const refreshResponse = await fetch("http://localhost:3080/refresh", {
+                        method: "POST",
+                        credentials: "include",
+                    });
+
+                    if (!refreshResponse.ok) {
+                        console.log("Nie udało się odświeżyć tokena, przekierowanie na login.");
+                        setLoggedIn(false);
+                        navigate("/login");
+                        return false;
+                    }
+
+                    // Jeśli token został odświeżony, ponownie wywołujemy /verify
+                    return fetch("http://localhost:3080/verify", {
+                        method: "POST",
+                        credentials: "include",
+                    }).then(res => res.json());
+                }
+
+                return response.json();
+            })
             .then(data => {
                 console.log("Odpowiedź z serwera:", data);
-                if (data.message === 'success') {
+                if (data.message === "success") {
                     setLoggedIn(true);
                     setEmail(data.email || "");
                     return true;
@@ -41,7 +66,7 @@ function AppContent() {
                 }
             })
             .catch(error => {
-                console.error('Błąd weryfikacji tokenu:', error);
+                console.error("Błąd weryfikacji tokenu:", error);
                 setLoggedIn(false);
                 navigate("/login");
                 return false;
