@@ -74,7 +74,9 @@ const UserPanel = () => {
     const fetchFriends = async () => {
         try {
           // Fetch the friends list of the logged-in user
-          const response = await fetch(`http://localhost:3080/api/friends?user_id=${userData.userId}`);
+          const response = await fetch(`http://localhost:3080/api/friends?user_id=${userData.userId}`,{
+                credentials: 'include',
+          });
           if (response.ok) {
             const data = await response.json();
             setFriends(data); // Populate the friends list
@@ -99,6 +101,7 @@ const UserPanel = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ receiver_id: receiverId, sender_id: senderId }),
       });
 
@@ -129,6 +132,7 @@ const UserPanel = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       const data = await response.json();

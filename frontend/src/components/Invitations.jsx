@@ -23,6 +23,7 @@ const Invitations = ({ userId }) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${userData?.token}`,
         },
+        credentials: 'include',
       });
 
       const data = await response.json();
@@ -48,6 +49,7 @@ const Invitations = ({ userId }) => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${userData?.token}`,
           },
+          credentials: 'include',
         }
       );
 
@@ -78,6 +80,7 @@ const Invitations = ({ userId }) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${userData?.token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ sender_id: senderId, receiver_id: userData.userId }),
       });
 
@@ -97,6 +100,7 @@ const Invitations = ({ userId }) => {
           headers: {
             Authorization: `Bearer ${userData?.token}`,
           },
+          credentials: 'include',
         }
       );
 

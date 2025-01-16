@@ -438,7 +438,7 @@ app.get('/api/users',verifyAccessToken, async (_req, res) => {
     try {
         const { data, error } = await supabase
             .from('users')
-            .select('*');
+            .select('id, imie, nazwisko, image, email');
 
         if (error) {
             console.error('Error fetching users:', error);
@@ -1128,7 +1128,7 @@ app.get('/api/isonline/:userId', async (req, res) => {
     }
 });
 
-app.post('/api/invitations/send', async (req, res) => {
+app.post('/api/invitations/send',verifyAccessToken, async (req, res) => {
   const { sender_id, receiver_id } = req.body;
 
   try {
@@ -1147,7 +1147,7 @@ app.post('/api/invitations/send', async (req, res) => {
 });
 
 
-app.get('/api/invitations/sent/:senderId', async (req, res) => {
+app.get('/api/invitations/sent/:senderId',verifyAccessToken, async (req, res) => {
   const { senderId } = req.params;
 
   try {
@@ -1169,7 +1169,7 @@ app.get('/api/invitations/sent/:senderId', async (req, res) => {
 });
 
 // Endpoint to fetch received invitations
-app.get('/api/invitations/received', async (req, res) => {
+app.get('/api/invitations/received',verifyAccessToken, async (req, res) => {
   const { receiver_id } = req.query;
 
   try {
@@ -1192,7 +1192,7 @@ app.get('/api/invitations/received', async (req, res) => {
 
 
 
-app.get('/api/friends', async (req, res) => {
+app.get('/api/friends', verifyAccessToken, async (req, res) => {
   const { user_id } = req.query;
 
   try {
@@ -1220,7 +1220,7 @@ app.get('/api/friends', async (req, res) => {
     // Fetch all related users in one query, ensuring the logged-in user is excluded
     const { data: users, error: usersError } = await supabase
       .from('users')
-      .select('id, imie, nazwisko, image')
+      .select('id, imie, nazwisko, image, email')
       .in('id', relatedUserIds);  // Use the IN operator to fetch all users in one go
 
     if (usersError) {
@@ -1236,7 +1236,7 @@ app.get('/api/friends', async (req, res) => {
   }
 });
 
-app.get('/api/friends/check', async (req, res) => {
+app.get('/api/friends/check',verifyAccessToken, async (req, res) => {
   const { user_id_1, user_id_2 } = req.query;
 
   try {
@@ -1269,7 +1269,7 @@ app.get('/api/friends/check', async (req, res) => {
 
 
 
-app.delete('/api/friends/del/:id1/:id2', async (req, res) => {
+app.delete('/api/friends/del/:id1/:id2',verifyAccessToken, async (req, res) => {
   let { id1, id2 } = req.params;
 
   // Ensure lower ID is always the first one
@@ -1307,7 +1307,7 @@ app.delete('/api/friends/del/:id1/:id2', async (req, res) => {
 });
 
 
-app.post('/api/friends/add', async (req, res) => {
+app.post('/api/friends/add',verifyAccessToken, async (req, res) => {
   const { sender_id, receiver_id } = req.body;
 
   try {
@@ -1358,7 +1358,7 @@ app.post('/api/friends/add', async (req, res) => {
 
 
 
-app.delete('/api/invitations/del/:sender_id/:receiver_id', async (req, res) => {
+app.delete('/api/invitations/del/:sender_id/:receiver_id',verifyAccessToken, async (req, res) => {
   const { sender_id, receiver_id } = req.params;
 
   try {
