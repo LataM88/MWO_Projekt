@@ -13,8 +13,12 @@ function Chat() {
     const [userOnlineStatus, setUserOnlineStatus] = useState({});
     const currentUser = JSON.parse(localStorage.getItem('user'));
     const ws = useRef(null);
+    const messagesEndRef = useRef(null); // Ref to the end of the messages
 
-    // Fetching users and their online status
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
     useEffect(() => {
         const fetchUsersAndStatus = async () => {
             try {
@@ -45,7 +49,6 @@ function Chat() {
         return () => clearInterval(interval);
     }, [currentUser.userId]);
 
-    // Fetching messages from the server when the active user changes
     useEffect(() => {
         if (activeUser) {
             const fetchMessages = async () => {
@@ -65,7 +68,6 @@ function Chat() {
         }
     }, [activeUser, currentUser.userId]);
 
-    // Setting up WebSocket connection for real-time updates
     useEffect(() => {
         ws.current = new WebSocket('ws://localhost:3080');
 
@@ -75,7 +77,7 @@ function Chat() {
 
         ws.current.onmessage = (event) => {
             const newMessage = JSON.parse(event.data);
-            setMessages((prevMessages) => [...prevMessages, newMessage]); // Add new message to the list
+            setMessages((prevMessages) => [...prevMessages, newMessage]);
         };
 
         return () => {
@@ -85,13 +87,10 @@ function Chat() {
         };
     }, []);
 
-    const formatTime = (timestamp) => {
-        const date = new Date(timestamp);
-        if (isNaN(date.getTime())) return '';
-        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-    };
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
 
-    // Send message to the server and broadcast to WebSocket clients
     const handleSendMessage = async () => {
         if (message && activeUser) {
             const timestamp = new Date().toISOString();
@@ -111,8 +110,8 @@ function Chat() {
                 });
 
                 if (response.ok) {
-                    // Message is already added through WebSocket connection
                     setMessage('');
+                    scrollToBottom();
                 } else {
                     console.error('Failed to send message:', response.statusText);
                 }
@@ -191,6 +190,7 @@ function Chat() {
                                     </div>
                                 );
                             })}
+                            <div ref={messagesEndRef}></div> {/* Element for scrolling */}
                         </div>
 
                         <div className="input-area">
