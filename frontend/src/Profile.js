@@ -30,7 +30,9 @@ function Profile() {
     useEffect(() => {
         const fetchUserPosts = async () => {
             try {
-                const response = await fetch(`http://localhost:3080/api/posts/${userId}`);
+                const response = await fetch(`http://localhost:3080/api/posts/${userId}`,{
+                    credentials: 'include',
+                });
                 if (response.ok) {
                     const postsData = await response.json();
                     setPosts(postsData);
@@ -55,7 +57,9 @@ function Profile() {
             setIsOwnProfile(false);
         }
 
-        fetch(`http://localhost:3080/user/${userId}`)
+        fetch(`http://localhost:3080/user/${userId}`,{
+            credentials: 'include',
+        })
             .then((res) => res.json())
             .then((data) => {
                 setUser(data);
@@ -82,10 +86,12 @@ function Profile() {
     const saveOpis = () => {
         fetch(`http://localhost:3080/user/${userId}`, {
             method: 'PUT',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ opis: editedOpis }),
+
         })
             .then((res) => {
                 if (res.ok) {
@@ -111,6 +117,7 @@ function Profile() {
             const response = await fetch(`http://localhost:3080/upload-profile-image/${userId}`, {
                 method: 'POST',
                 body: formData,
+                credentials: 'include',
             });
 
             if (response.ok) {

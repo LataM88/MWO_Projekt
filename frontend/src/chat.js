@@ -22,7 +22,9 @@ function Chat() {
     useEffect(() => {
         const fetchUsersAndStatus = async () => {
             try {
-                const response = await fetch("http://localhost:3080/api/users");
+                const response = await fetch("http://localhost:3080/api/users",{
+                    credentials: 'include',
+                });
                 if (response.ok) {
                     const data = await response.json();
                     const filteredData = data.filter(user => user.id !== currentUser.userId);
@@ -53,7 +55,9 @@ function Chat() {
         if (activeUser) {
             const fetchMessages = async () => {
                 try {
-                    const response = await fetch(`http://localhost:3080/messages/${currentUser.userId}/${activeUser.id}`);
+                    const response = await fetch(`http://localhost:3080/messages/${currentUser.userId}/${activeUser.id}`, {
+                        credentials: 'include',
+                    });
                     const data = await response.json();
                     if (data && Array.isArray(data.messages)) {
                         const transformedMessages = data.messages.map(msg => ({
@@ -113,6 +117,7 @@ function Chat() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(newMessage),
+                    credentials: 'include',
                 });
 
                 if (response.ok) {

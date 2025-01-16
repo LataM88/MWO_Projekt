@@ -35,8 +35,8 @@ app.use(express.json());
 app.use(cookieParser());
 
 const verifyAccessToken = (req, res, next) => {
-    const token = req.cookies['accessToken'];
     console.log('weryfikacja w endpointach')
+    const token = req.cookies['accessToken'];
     console.log("Token w cookies:", token)
     if (!token) {
         return res.status(401).json({ message: "Brak tokena, brak dostępu" });
@@ -47,8 +47,8 @@ const verifyAccessToken = (req, res, next) => {
             return res.status(401).json({ message: "Nieprawidłowy lub wygasły token" });
         }
 
-        req.user = decoded; // Przechowujemy dane użytkownika w `req.user`
-        next(); // Przekazujemy dalej do kolejnego middleware lub kontrolera
+        req.user = decoded;
+        next();
     });
 };
 
@@ -85,7 +85,7 @@ app.get('/', (_req, res) => {
 const createAccessToken = (userId, email) => {
     const payload = { userId, email };
     console.log('tworzenie accestokena')
-    return jwt.sign(payload, jwtSecretKey, { expiresIn: '10m' }); // Ważność: 15 minut
+    return jwt.sign(payload, jwtSecretKey, { expiresIn: '20m' }); // Ważność: 20 minut
 };
 
 const createRefreshTokenLong = (userId, email) => {
@@ -99,13 +99,55 @@ const createRefreshToken = (userId, email) => {
     return jwt.sign(payload, refreshTokenSecretKey, { expiresIn: '1h' }); // Ważność: 1 godzina
 };
 
+app.post('/verify', (req, res) => {
+    console.log('sprawdzanie access tokena')
+    const token = req.cookies['accessToken'];
+    if (!token) {
+        return res.status(401).json({ message: 'Brak access tokena' });
+    }
+
+    jwt.verify(token, jwtSecretKey, (err, decoded) => {
+        if (err) {
+            console.log('access token wygasł')
+            return res.status(401).json({ message: 'Nieprawidłowy lub wygasły token' });
+        }
+        res.status(200).json({ message: 'success', userId: decoded.userId });
+    });
+});
+
+app.post('/refresh', (req, res) => {
+    console.log('sprawcanie refresh tokena')
+    const refreshToken = req.cookies['refreshToken'];
+    if (!refreshToken) {
+        return res.status(401).json({ message: 'Brak refresh tokena' });
+    }
+
+    jwt.verify(refreshToken, refreshTokenSecretKey, (refreshErr, refreshDecoded) => {
+        if (refreshErr) {
+            console.log('refresh token wygasł')
+            return res.status(403).json({ message: 'Refresh token jest nieprawidłowy lub wygasł' });
+        }
+
+        const newAccessToken = createAccessToken(refreshDecoded.userId, refreshDecoded.email);
+        res.cookie('accessToken', newAccessToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'None',
+            maxAge: 20 * 60 * 1000,
+        });
+
+        res.status(200).json({ message: 'Token odświeżony' });
+    });
+});
+
+
 app.post('/logout', (req, res) => {
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
     res.status(200).json({ message: 'Wylogowano' });
 });
 
-// Registration endpoint
+// Rejestracja (nie wymaga autoryzacji)
 app.post('/register', async (req, res) => {
     const { email, password, imie, nazwisko } = req.body;
 
@@ -135,7 +177,7 @@ app.post('/register', async (req, res) => {
             return res.status(500).json({ message: 'Błąd rejestracji' });
         }
 
-        // Wysyłanie linku aktywacyjnego
+
         const activationLink = `http://localhost:3080/activate?code=${activationCode}&email=${email}&imie=${imie}&nazwisko=${nazwisko}`;
 
 
@@ -170,12 +212,10 @@ const mailOptions = {
     }
 });
 
-// Authorization endpoint
-// Import nodemailer (jest już zaimportowany)
 
 const generateTwoFactorCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-// Modyfikacja endpointu logowania
+// Logowanie (nie wymaga autoryzacji)
 app.post('/auth', async (req, res) => {
     const { email, password } = req.body;
 
@@ -259,12 +299,11 @@ app.post('/auth', async (req, res) => {
 });
 
 
-// Endpoint do weryfikacji kodu 2FA
+// Endpoint do weryfikacji kodu 2FA (nie wymaga weryfikacji)
 app.post('/verify-2fa', async (req, res) => {
     const { userId, twoFactorCode, rememberMe } = req.body;
 
     try {
-        // Pobranie użytkownika z bazy danych
         const { data: user, error } = await supabase
             .from('users')
             .select('twoFactorCode, email')
@@ -275,7 +314,6 @@ app.post('/verify-2fa', async (req, res) => {
             return res.status(400).json({ message: 'Nieprawidłowy użytkownik.' });
         }
 
-        // Weryfikacja kodu 2FA
         if (user.twoFactorCode !== twoFactorCode) {
             return res.status(401).json({ message: 'Nieprawidłowy kod weryfikacyjny.' });
         }
@@ -291,7 +329,6 @@ app.post('/verify-2fa', async (req, res) => {
             return res.status(500).json({ message: 'Błąd serwera' });
         }
 
-        // Generowanie tokenów
         const accessToken = createAccessToken(userId, user.email);
 
         let refreshToken;
@@ -299,30 +336,28 @@ app.post('/verify-2fa', async (req, res) => {
             refreshToken = createRefreshTokenLong(userId, user.email);
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
-                secure: true, // Dla lokalnego środowiska (HTTP)
-                sameSite: 'None', // Albo 'Lax' w zależności od potrzeb
-                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dni
+                secure: true,
+                sameSite: 'None',
+                maxAge: 7 * 24 * 60 * 60 * 1000,
             });
         } else {
             refreshToken = createRefreshToken(userId, user.email);
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
-                secure: true, // Dla lokalnego środowiska (HTTP)
-                sameSite: 'None', // Albo 'Lax' w zależności od potrzeb
-                maxAge: 60 * 60 * 1000, // 1 godzina
+                secure: true,
+                sameSite: 'None',
+                maxAge: 60 * 60 * 1000,
             });
         }
 
-        // Ustawienie tokenów w ciasteczkach
         res.cookie('accessToken', accessToken, {
             httpOnly: true,
-            secure: true, // Dla lokalnego środowiska (HTTP)
-            sameSite: 'None', // Albo 'Lax' w zależności od potrzeb
-            maxAge: 15 * 60 * 1000, // 15 minut
+            secure: true,
+            sameSite: 'None',
+            maxAge: 15 * 60 * 1000,
         });
 
         console.log("log przed wysłaniem odpowiedzi z verify-f2a")
-        // Zwrócenie odpowiedzi z powodzeniem
         res.status(200).json({ message: 'Weryfikacja pomyślna' });
         console.log("log po wysłaniem odpowiedzi z verify-f2a")
     } catch (err) {
@@ -333,7 +368,7 @@ app.post('/verify-2fa', async (req, res) => {
 
 
 
-// Check if account exists endpoint
+// Logowanie, sprawdzenie użytkownika (nie wymaga weryfikacji)
 app.post('/check-account', async (req, res) => {
     const { email } = req.body;
 
@@ -358,19 +393,19 @@ app.post('/check-account', async (req, res) => {
     }
 });
 
-// Get all users from the database
-app.get('/api/users', async (_req, res) => {
+// Userpanel na chacie (wymaga weryfikacji)
+app.get('/api/users',verifyAccessToken, async (_req, res) => {
     try {
         const { data, error } = await supabase
-            .from('users') // Assuming your table name is 'users'
-            .select('*'); // Select all columns (or adjust if needed)
+            .from('users')
+            .select('*');
 
         if (error) {
             console.error('Error fetching users:', error);
             return res.status(500).json({ message: 'Błąd pobierania użytkowników' });
         }
 
-        res.status(200).json(data); // Return users data in JSON format
+        res.status(200).json(data);
     } catch (err) {
         console.error('Unhandled error:', err);
         res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
@@ -385,7 +420,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Endpoint to send password reset link
+// Endpoint wysyłający link resetujący hasło (nie wymaga weryfikacji)
 app.post('/forgot-password', async (req, res) => {
     const { email } = req.body;  // Pobieramy e-mail użytkownika z zapytania
 
@@ -397,7 +432,7 @@ app.post('/forgot-password', async (req, res) => {
         .from('users')
         .select('email, resetCode')
         .eq('email', email)
-        .single(); // Pobieramy tylko jeden rekord (jeśli istnieje)
+        .single();
 
     if (error || !data) {
         return res.status(400).json({ message: 'Użytkownik nie istnieje.' });
@@ -406,7 +441,7 @@ app.post('/forgot-password', async (req, res) => {
     // Aktualizowanie resetCode w bazie danych dla tego użytkownika
     const { error: updateError } = await supabase
         .from('users')
-        .update({ resetCode }) // Ustawiamy nowy kod resetu
+        .update({ resetCode })
         .eq('email', email);
 
     if (updateError) {
@@ -439,7 +474,7 @@ const mailOptions = {
     });
 });
 
-// Endpoint to reset the password
+// Endpoint resetowania hasła (nie wymaga weryfikacji)
 
 app.post('/reset-password', async (req, res) => {
     const { email, resetCode, newPassword } = req.body;
@@ -476,6 +511,7 @@ app.post('/reset-password', async (req, res) => {
     res.status(200).json({ message: 'Hasło zostało zmienione pomyślnie.' });
 });
 
+//endpoint aktywacji konta (nie wymaga weryfikacji)
 app.get('/activate', async (req, res) => {
     const { code, email } = req.query;
 
@@ -508,7 +544,6 @@ app.get('/activate', async (req, res) => {
             return res.status(400).json({ message: 'Link aktywacyjny wygasł.' });
         }
 
-        // Aktywacja konta
         const { error: updateError } = await supabase
             .from('users')
             .update({ isActive: true, activationCode: null, activationExpires: null })
@@ -525,7 +560,8 @@ app.get('/activate', async (req, res) => {
     }
 });
 
-app.get('/users', async (req, res) => {
+//Userpanel? (wymaga weryfikacji)
+app.get('/users',verifyAccessToken, async (req, res) => {
     const { data, error } = await supabase
         .from('users')
         .select('id, imie, nazwisko, isActive, opis');
@@ -537,58 +573,58 @@ app.get('/users', async (req, res) => {
 
     res.status(200).json(data);
 });
-//informacje o użytkowniku
-app.get('/user/:id', async (req, res) => {
-    const { id } = req.params; // Pobranie ID z parametru ścieżki
+//Profil dane o użytkowniku (wymaga weryfikacji)
+app.get('/user/:id',verifyAccessToken, async (req, res) => {
+    const { id } = req.params;
 
 
     try {
-        // Zapytanie do Supabase po użytkownika z określonym ID
+
         const { data, error } = await supabase
             .from('users')
             .select('*')
             .eq('id', id)
-            .single(); // Oczekujemy dokładnie jednego wyniku
+            .single();
 
         if (error || !data) {
             console.error('Error fetching user:', error || 'No user found');
             return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
         }
 
-        res.status(200).json(data); // Zwrócenie danych użytkownika
+        res.status(200).json(data);
     } catch (err) {
         console.error('Unexpected error:', err);
         res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
     }
 });
-app.put('/user/:id', async (req, res) => {
-    const userId = req.params.id;  // ID użytkownika z URL
-    const { opis } = req.body;     // Nowy opis z body żądania
+//Aktualizacja opisu (wymaga weryfikacji)
+app.put('/user/:id',verifyAccessToken, async (req, res) => {
+    const userId = req.params.id;
+    const { opis } = req.body;
 
     try {
-        // Szukamy użytkownika w bazie danych
         const { data: user, error } = await supabase
             .from('users')
             .select('*')
             .eq('id', userId)
-            .single();  // Oczekujemy dokładnie jednego użytkownika
+            .single();
 
         if (error || !user) {
             return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
         }
 
-        // Aktualizowanie opisu użytkownika
+
         const { error: updateError } = await supabase
             .from('users')
-            .update({ opis })  // Zaktualizowanie opisu
-            .eq('id', userId);  // Określamy, którego użytkownika chcemy zaktualizować
+            .update({ opis })
+            .eq('id', userId);
 
         if (updateError) {
             console.error('Błąd podczas aktualizacji opisu:', updateError);
             return res.status(500).json({ message: 'Błąd serwera podczas aktualizacji opisu' });
         }
 
-        // Zwrócenie zaktualizowanego użytkownika
+
         res.status(200).json({ message: 'Opis został zaktualizowany pomyślnie', user });
     } catch (err) {
         console.error('Błąd podczas aktualizacji opisu:', err);
@@ -596,8 +632,8 @@ app.put('/user/:id', async (req, res) => {
     }
 });
 
-// Aktualizacja zdjęcia profilowego
-app.post('/upload-profile-image/:userId', upload.single('image'), async (req, res) => {
+// Aktualizacja zdjęcia profilowego (wymaga weryfikacji)
+app.post('/upload-profile-image/:userId',verifyAccessToken, upload.single('image'), async (req, res) => {
     const { userId } = req.params;
     const file = req.file;
 
@@ -615,7 +651,7 @@ app.post('/upload-profile-image/:userId', upload.single('image'), async (req, re
             .toFormat(fileExtension)
             .toBuffer();
 
-        // Sprawdź, czy istnieje plik w Supabase
+
         const { data: existingFile, error: checkError } = await supabase
             .storage
             .from('profile-image')
@@ -626,7 +662,7 @@ app.post('/upload-profile-image/:userId', upload.single('image'), async (req, re
             return res.status(500).json({ message: 'Error checking file existence in Supabase.' });
         }
 
-        // Jeśli plik istnieje, usuń go
+
         if (existingFile.length > 0) {
             const { error: deleteError } = await supabase
                 .storage
@@ -639,7 +675,7 @@ app.post('/upload-profile-image/:userId', upload.single('image'), async (req, re
             }
         }
 
-        // Prześlij nowy plik
+
         const { data, error } = await supabase.storage
             .from('profile-image')
             .upload(fileName, resizedImageBuffer, { contentType: `image/${fileExtension}` });
@@ -651,7 +687,7 @@ app.post('/upload-profile-image/:userId', upload.single('image'), async (req, re
 
         const imageUrl = `${supabaseUrl}/storage/v1/object/public/profile-image/${fileName}?${new Date().getTime()}`;
 
-        // Zaktualizuj profil użytkownika
+
         const { error: updateError } = await supabase
             .from('users')
             .update({ image: imageUrl })
@@ -669,54 +705,8 @@ app.post('/upload-profile-image/:userId', upload.single('image'), async (req, re
     }
 });
 
-
-
-app.post('/verify', (req, res) => {
-    console.log('sprawcanie access tokena')
-    const token = req.cookies['accessToken'];
-    if (!token) {
-        return res.status(401).json({ message: 'Brak access tokena' });
-    }
-
-    jwt.verify(token, jwtSecretKey, (err, decoded) => {
-        if (err) {
-            console.log('access token wygasł')
-            return res.status(401).json({ message: 'Nieprawidłowy lub wygasły token' });
-        }
-        res.status(200).json({ message: 'success', userId: decoded.userId });
-    });
-});
-
-app.post('/refresh', (req, res) => {
-    console.log('sprawcanie refresh tokena')
-    const refreshToken = req.cookies['refreshToken'];
-    if (!refreshToken) {
-        return res.status(401).json({ message: 'Brak refresh tokena' });
-    }
-
-    jwt.verify(refreshToken, refreshTokenSecretKey, (refreshErr, refreshDecoded) => {
-        if (refreshErr) {
-            console.log('refresh token wygasł')
-            return res.status(403).json({ message: 'Refresh token jest nieprawidłowy lub wygasł' });
-        }
-
-        const newAccessToken = createAccessToken(refreshDecoded.userId, refreshDecoded.email);
-        res.cookie('accessToken', newAccessToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'None',
-            maxAge: 15 * 60 * 1000,
-        });
-
-        res.status(200).json({ message: 'Token odświeżony' });
-    });
-});
-
-
-// Endpoint do przedłużenia sesji
-
-
-app.post('/messages', async (req, res) => {
+//endpoint wysyłania wiadomości (wymaga weryfikacji)
+app.post('/messages',verifyAccessToken, async (req, res) => {
     const { senderId, receiverId, content } = req.body;
 
     try {
@@ -743,13 +733,12 @@ app.post('/messages', async (req, res) => {
     }
 });
 
-// Endpoint do pobierania wiadomości
-app.get('/messages/:userId/:receiverId', async (req, res) => {
+// Endpoint do pobierania wiadomości (wymaga weryfikacji)
+app.get('/messages/:userId/:receiverId',verifyAccessToken, async (req, res) => {
     let { userId, receiverId } = req.params;
 
-    // Konwersja userId i receiverId na liczby
-    userId = parseInt(userId, 10);  // Konwersja na liczbę
-    receiverId = parseInt(receiverId, 10);  // Konwersja na liczbę
+    userId = parseInt(userId, 10);
+    receiverId = parseInt(receiverId, 10);
 
     try {
         const { data, error } = await supabase
@@ -770,7 +759,7 @@ app.get('/messages/:userId/:receiverId', async (req, res) => {
     }
 });
 
-app.get('/api/user', async (req, res) => {
+app.get('/api/user',verifyAccessToken, async (req, res) => {
     const token = req.headers['authorization']?.split(' ')[1]; // Pobierz token z nagłówka
 
     if (!token) {
@@ -791,15 +780,15 @@ app.get('/api/user', async (req, res) => {
             return res.status(404).json({ error: 'Nie znaleziono użytkownika' });
         }
 
-        res.json(user); // Zwróć dane użytkownika
+        res.json(user);
     } catch (err) {
         console.error('Błąd weryfikacji tokenu:', err);
         res.status(500).json({ error: 'Błąd serwera' });
     }
 });
 
-// Endpoint do pobierania postów
-app.get('/api/posts', async (req, res) => {
+// Endpoint do pobierania postów (wymaga weryfikacji)
+app.get('/api/posts',verifyAccessToken, async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('posts')
@@ -833,7 +822,7 @@ app.get('/api/posts', async (req, res) => {
             return res.status(500).json({ error: 'Błąd pobierania postów' });
         }
 
-        // Mapowanie danych do odpowiedniego formatu
+
         const posts = data.map(post => ({
             id: post.id,
             content: post.content,
@@ -864,8 +853,8 @@ app.get('/api/posts', async (req, res) => {
     }
 });
 
-// Endpoint do pobierania postów konkretnego użytkownika (profil)
-app.get('/api/posts/:userId', async (req, res) => {
+// Endpoint do pobierania postów konkretnego użytkownika na jego profilu (wymaga weryfikacji)
+app.get('/api/posts/:userId',verifyAccessToken, async (req, res) => {
     const { userId } = req.params;
 
     try {
@@ -910,8 +899,8 @@ app.get('/api/posts/:userId', async (req, res) => {
 });
 
 
-// Endpoint do dodawania postów
-app.post('/api/posts', async (req, res) => {
+// Endpoint do dodawania postów (wymaga weryfikacji)
+app.post('/api/posts',verifyAccessToken, async (req, res) => {
     const { users_id, content } = req.body;
 
     if (!users_id || !content) {
@@ -920,7 +909,6 @@ app.post('/api/posts', async (req, res) => {
     }
 
     try {
-        // Check if the user exists
         const { data: user, error: userError } = await supabase
             .from('users')
             .select('*')
@@ -932,7 +920,6 @@ app.post('/api/posts', async (req, res) => {
             return res.status(404).json({ error: 'Nie znaleziono użytkownika' });
         }
 
-        // Insert post
         const { data: newPost, error: postError } = await supabase
             .from('posts')
             .insert([{
@@ -940,7 +927,7 @@ app.post('/api/posts', async (req, res) => {
                 content,
                 created_at: new Date().toISOString(),
             }])
-            .select('*') // Ensure the returned data is selected
+            .select('*')
             .single();
 
         if (postError) {
@@ -949,14 +936,14 @@ app.post('/api/posts', async (req, res) => {
         }
 
         console.log('Zapisano post:', newPost);
-        res.status(201).json(newPost); // Return the saved post
+        res.status(201).json(newPost);
     } catch (error) {
         console.error('Błąd serwera:', error);
         res.status(500).json({ error: 'Wewnętrzny błąd serwera' });
     }
 });
-// Endpoint do pobierania komentarzy do postów
-app.get('/api/comments', async (req, res) => {
+// Endpoint do pobierania komentarzy do postów (wymaga weryfikacji)
+app.get('/api/comments',verifyAccessToken, async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('comments')
@@ -999,8 +986,8 @@ app.get('/api/comments', async (req, res) => {
     }
 });
 
-// Endpoint do dodawania komentarzy
-app.post('/api/comments', async (req, res) => {
+// Endpoint do dodawania komentarzy (potrzebna weryfikacja)
+app.post('/api/comments',verifyAccessToken, async (req, res) => {
     const { post_id, user_id, content } = req.body;
 
     if (!post_id || !user_id || !content) {
@@ -1009,7 +996,7 @@ app.post('/api/comments', async (req, res) => {
     }
 
     try {
-        // Insert comment
+
         const { data: newComment, error: commentError } = await supabase
             .from('comments')
             .insert([{
@@ -1034,9 +1021,9 @@ app.post('/api/comments', async (req, res) => {
     }
 });
 
-// Endpoint to update the user's last active time
+// Aktualizacja statusu online (nie wymaga weryfikacji)
 
-app.post('/api/activity', async (req, res) => {
+app.post('/api/activity',async (req, res) => {
     const { userId } = req.body;
 
     if (!userId) {
@@ -1044,7 +1031,7 @@ app.post('/api/activity', async (req, res) => {
     }
 
     try {
-        // Get current time in UTC and adjust it by one hour
+
         const now = new Date(new Date().getTime() + 3600000).toISOString(); // +3600000 adds 1 hour in milliseconds
         await supabase
             .from('users')
@@ -1058,7 +1045,7 @@ app.post('/api/activity', async (req, res) => {
     }
 });
 
-// Endpoint to check if a user is online
+// Sprawdzanie użytkownika czy jest online (nie wymaga weryfikacji)
 app.get('/api/isonline/:userId', async (req, res) => {
     const { userId } = req.params;
 
@@ -1067,7 +1054,7 @@ app.get('/api/isonline/:userId', async (req, res) => {
     }
 
     try {
-        // Fetch user data from the database
+
         const { data, error } = await supabase
             .from('users')
             .select('last_active')
@@ -1078,17 +1065,17 @@ app.get('/api/isonline/:userId', async (req, res) => {
             return res.status(500).json({ message: 'Błąd podczas pobierania danych.' });
         }
 
-        // Convert last active time to UTC Date object
+
         const lastActiveUTC = new Date(data.last_active);
 
-        // Get the current server time in UTC
+
         const now = new Date().toISOString();
 
-        // Calculate the difference in seconds
+
         const timeDiffSeconds = (new Date() - lastActiveUTC) / 1000;
         const isOnline = timeDiffSeconds  < 60; // Last active within the last 1 minutes
 
-        // Send the result as a response
+
         res.status(200).json({ isOnline });
     } catch (error) {
         console.error('Błąd podczas sprawdzania statusu online użytkownika:', error);

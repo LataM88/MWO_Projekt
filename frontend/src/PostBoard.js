@@ -41,6 +41,8 @@ const PostBoard = () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newPost),
+                credentials: "include",
+
             });
 
             if (!response.ok) {
@@ -59,7 +61,9 @@ const PostBoard = () => {
 
     const fetchPosts = async () => {
         try {
-            const response = await fetch(API_URL);
+            const response = await fetch(API_URL,{
+                credentials: 'include',
+            });;
             if (response.ok) {
                 const data = await response.json();
                 setPosts(data);
@@ -95,6 +99,7 @@ const PostBoard = () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newComment),
+                credentials: "include",
             });
 
             if (!response.ok) {
