@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Route, Routes, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
 import Home from './home';
@@ -17,7 +17,6 @@ import './App.css';
 function AppContent() {
     const [loggedIn, setLoggedIn] = useState(false);
     const [email, setEmail] = useState("");
-    const location = useLocation();
     const navigate = useNavigate();
 
     const verifyToken = () => {
@@ -25,12 +24,35 @@ function AppContent() {
 
         return fetch("http://localhost:3080/verify", {
             method: "POST",
-            credentials: "include", // To ustawienie zapewnia przesyłanie ciasteczek
+            credentials: "include",
         })
-            .then(response => response.json())
+            .then(async (response) => {
+                if (response.status === 401) {
+                    console.log("Access token wygasł, próbuję odświeżyć...");
+
+                    const refreshResponse = await fetch("http://localhost:3080/refresh", {
+                        method: "POST",
+                        credentials: "include",
+                    });
+
+                    if (!refreshResponse.ok) {
+                        console.log("Nie udało się odświeżyć tokena, przekierowanie na login.");
+                        setLoggedIn(false);
+                        navigate("/login");
+                        return false;
+                    }
+
+                    return fetch("http://localhost:3080/verify", {
+                        method: "POST",
+                        credentials: "include",
+                    }).then(res => res.json());
+                }
+
+                return response.json();
+            })
             .then(data => {
                 console.log("Odpowiedź z serwera:", data);
-                if (data.message === 'success') {
+                if (data.message === "success") {
                     setLoggedIn(true);
                     setEmail(data.email || "");
                     return true;
@@ -41,7 +63,7 @@ function AppContent() {
                 }
             })
             .catch(error => {
-                console.error('Błąd weryfikacji tokenu:', error);
+                console.error("Błąd weryfikacji tokenu:", error);
                 setLoggedIn(false);
                 navigate("/login");
                 return false;
@@ -51,7 +73,7 @@ function AppContent() {
     const handleLogout = () => {
         fetch("http://localhost:3080/logout", {
             method: "POST",
-            credentials: "include", // Przesyłanie cookies
+            credentials: "include",
         })
             .then(() => {
                 setLoggedIn(false);
@@ -68,8 +90,9 @@ function AppContent() {
             {loggedIn && <Navbar setLoggedIn={setLoggedIn} setEmail={setEmail} onLogout={handleLogout} />}
             {loggedIn && <ActivityMonitor/>}
             <Routes>
-                {/* Ścieżki dostępne dla wszystkich użytkowników */}
-                <Route path="/" element={<Home email={email} loggedIn={loggedIn} setLoggedIn={setLoggedIn} />} />
+                {/* Przekierowanie / na /postboard */}
+                <Route path="/" element={<Navigate to="/postboard" replace />} />
+
                 <Route path="/login" element={<Login setLoggedIn={setLoggedIn} setEmail={setEmail} />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/zapomnialesHasla" element={<ForgotPassword />} />
@@ -135,3 +158,5 @@ function App() {
 }
 
 export default App;
+
+

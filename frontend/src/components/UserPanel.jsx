@@ -21,7 +21,9 @@ const UserPanel = () => {
         const fetchOnlineStatus = async () => {
             const status = {};
             try {
-                const response = await fetch("http://localhost:3080/api/users");
+                const response = await fetch("http://localhost:3080/api/users",{
+                    credentials: 'include',
+                });
                 if (response.ok) {
                     const data = await response.json();
                     for (let user of data) {
@@ -48,7 +50,9 @@ const UserPanel = () => {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await fetch("http://localhost:3080/api/users");
+                const response = await fetch("http://localhost:3080/api/users",{
+                    credentials: 'include',
+                });
                 if (response.ok) {
                     const data = await response.json();
                     const filteredUsers = data.filter(

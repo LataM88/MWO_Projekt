@@ -77,8 +77,19 @@ const Register = () => {
         });
     };
 
+    // Funkcja obsługująca klawisz Enter
+    const handleKeyDown = (event) => {
+        if (event.key === "Enter") {
+            onButtonClick();
+        }
+    };
+
     return (
-        <div className="mainContainerRegister">
+        <div
+            className="mainContainerRegister"
+            tabIndex={0} // Dodanie focusowalności
+            onKeyDown={handleKeyDown} // Obsługa klawiatury
+        >
             <div className={"OptionContainerRegister"}>
                 <div className="titleContainerRegister">
                     <div>Rejestracja</div>
@@ -138,7 +149,7 @@ const Register = () => {
                     <div className="successMessageRegister">
                         {successMessage}
                         <div>
-                        <Link to = "/login">Przejdź do logowania</Link>
+                            <Link to="/login">Przejdź do logowania</Link>
                         </div>
                     </div>
                 )}

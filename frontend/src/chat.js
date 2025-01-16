@@ -13,12 +13,18 @@ function Chat() {
     const [userOnlineStatus, setUserOnlineStatus] = useState({});
     const currentUser = JSON.parse(localStorage.getItem('user'));
     const ws = useRef(null);
+    const messagesEndRef = useRef(null); // Ref to the end of the messages
 
-    // Fetching users and their online status
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
     useEffect(() => {
         const fetchUsersAndStatus = async () => {
             try {
-                const response = await fetch("http://localhost:3080/api/users");
+                const response = await fetch("http://localhost:3080/api/users",{
+                    credentials: 'include',
+                });
                 if (response.ok) {
                     const data = await response.json();
                     const filteredData = data.filter(user => user.id !== currentUser.userId);
@@ -45,15 +51,22 @@ function Chat() {
         return () => clearInterval(interval);
     }, [currentUser.userId]);
 
-    // Fetching messages from the server when the active user changes
     useEffect(() => {
         if (activeUser) {
             const fetchMessages = async () => {
                 try {
-                    const response = await fetch(`http://localhost:3080/messages/${currentUser.userId}/${activeUser.id}`);
+                    const response = await fetch(`http://localhost:3080/messages/${currentUser.userId}/${activeUser.id}`, {
+                        credentials: 'include',
+                    });
                     const data = await response.json();
                     if (data && Array.isArray(data.messages)) {
-                        setMessages(data.messages);
+                        const transformedMessages = data.messages.map(msg => ({
+                            ...msg,
+                            senderId: msg.sender_id,
+                            receiverId: msg.receiver_id,
+                            timestamp: msg.timestamp,
+                        }));
+                        setMessages(transformedMessages);
                     } else {
                         setMessages([]);
                     }
@@ -65,7 +78,6 @@ function Chat() {
         }
     }, [activeUser, currentUser.userId]);
 
-    // Setting up WebSocket connection for real-time updates
     useEffect(() => {
         ws.current = new WebSocket('ws://localhost:3080');
 
@@ -75,7 +87,7 @@ function Chat() {
 
         ws.current.onmessage = (event) => {
             const newMessage = JSON.parse(event.data);
-            setMessages((prevMessages) => [...prevMessages, newMessage]); // Add new message to the list
+            setMessages((prevMessages) => [...prevMessages, newMessage]);
         };
 
         return () => {
@@ -85,13 +97,10 @@ function Chat() {
         };
     }, []);
 
-    const formatTime = (timestamp) => {
-        const date = new Date(timestamp);
-        if (isNaN(date.getTime())) return '';
-        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-    };
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
 
-    // Send message to the server and broadcast to WebSocket clients
     const handleSendMessage = async () => {
         if (message && activeUser) {
             const timestamp = new Date().toISOString();
@@ -108,11 +117,13 @@ function Chat() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(newMessage),
+                    credentials: 'include',
                 });
 
                 if (response.ok) {
-                    // Message is already added through WebSocket connection
+                    ws.current.send(JSON.stringify(newMessage)); // Send via WebSocket
                     setMessage('');
+                    scrollToBottom();
                 } else {
                     console.error('Failed to send message:', response.statusText);
                 }
@@ -132,6 +143,9 @@ function Chat() {
         const query = e.target.value.toLowerCase();
         setFilteredUsers(users.filter(user => user.email.toLowerCase().includes(query)));
     };
+
+    // Make sure users are loaded before rendering the chat messages
+    const isUsersLoaded = users.length > 0;
 
     return (
         <div className="chat-container">
@@ -177,20 +191,32 @@ function Chat() {
                         </div>
 
                         <div className="messages">
-                            {messages.map((msg, index) => {
-                                const sender = users.find(user => user.id === msg.senderId);
-                                return (
-                                    <div key={index} className={`message ${msg.senderId === currentUser.userId ? 'sent' : 'received'}`}>
-                                        {sender && (
-                                            <div className="message-sender">
-                                                <span className="sender-name">{sender.imie} {sender.nazwisko}</span>
-                                            </div>
-                                        )}
-                                        <div className="message-text">{msg.content}</div>
-                                        <div className="message-time">{new Date(msg.timestamp).toLocaleTimeString()}</div>
-                                    </div>
-                                );
-                            })}
+                            {isUsersLoaded ? (
+                                messages.map((msg, index) => {
+                                    const sender = users.find(user => user.id === msg.senderId);
+                                    // If sender is not found and the message was sent by the current user
+                                    const isSentByCurrentUser = msg.senderId === currentUser.userId;
+
+                                    return (
+                                        <div key={index} className={`message ${isSentByCurrentUser ? 'sent' : 'received'}`}>
+                                            {isSentByCurrentUser || sender ? (
+                                                <div className="message-sender">
+                                                    <span className="sender-name">
+                                                        {isSentByCurrentUser
+                                                            ? 'Ty'
+                                                            : sender?.imie + ' ' + sender?.nazwisko || 'Unknown sender'}
+                                                    </span>
+                                                </div>
+                                            ) : null}
+                                            <div className="message-text">{msg.content}</div>
+                                            <div className="message-time">{new Date(msg.timestamp).toLocaleTimeString()}</div>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <p>Loading users...</p>
+                            )}
+                            <div ref={messagesEndRef}></div> {/* Element for scrolling */}
                         </div>
 
                         <div className="input-area">
@@ -215,3 +241,4 @@ function Chat() {
 }
 
 export default Chat;
+
