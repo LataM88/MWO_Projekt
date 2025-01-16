@@ -82,9 +82,7 @@ const Navbar = ({ setLoggedIn, setEmail }) => {
                                 </li>
                             )}
                             <li>
-                                <Link to="/" className="dropdown-item">
-                                    Opcje
-                                </Link>
+
                             </li>
                             <li>
                                 <Link

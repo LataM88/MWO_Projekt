@@ -34,23 +34,63 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+
 const verifyAccessToken = (req, res, next) => {
-    console.log('weryfikacja w endpointach')
+
+
     const token = req.cookies['accessToken'];
-    console.log("Token w cookies:", token)
-    if (!token) {
-        return res.status(401).json({ message: "Brak tokena, brak dostępu" });
-    }
+    const refreshToken = req.cookies['refreshToken'];
+
+
+
+
 
     jwt.verify(token, jwtSecretKey, (err, decoded) => {
         if (err) {
-            return res.status(401).json({ message: "Nieprawidłowy lub wygasły token" });
-        }
 
-        req.user = decoded;
-        next();
+            console.log('AccessToken jest nieprawidłowy lub wygasły');
+
+
+            if (refreshToken) {
+                console.log('Próba odświeżenia tokena...');
+
+
+                jwt.verify(refreshToken, refreshTokenSecretKey, (refreshErr, refreshDecoded) => {
+                    if (refreshErr) {
+
+                        return res.status(401).json({ message: "Nieprawidłowy lub wygasły refresh token" });
+                    }
+
+
+                    const newAccessToken = jwt.sign(
+                        { userId: refreshDecoded.userId },
+                        jwtSecretKey,
+                        { expiresIn: '20m' } // Nowy accessToken ważny przez 20 minut
+                    );
+
+
+                    res.cookie('accessToken', newAccessToken, {
+                        httpOnly: true,
+                        secure: true,
+                        sameSite: 'None',
+                        maxAge: 20 * 60 * 1000, // 20 minut
+                    });
+
+
+                    req.user = refreshDecoded;
+                    return next();
+                });
+            } else {
+                return res.status(401).json({ message: "Brak refresh tokena, brak dostępu" });
+            }
+        } else {
+
+            req.user = decoded;
+            return next();
+        }
     });
 };
+
 
 // WebSocket connection handler
 wss.on('connection', (ws) => {
@@ -354,7 +394,7 @@ app.post('/verify-2fa', async (req, res) => {
             httpOnly: true,
             secure: true,
             sameSite: 'None',
-            maxAge: 15 * 60 * 1000,
+            maxAge: 20 * 60 * 1000,
         });
 
         console.log("log przed wysłaniem odpowiedzi z verify-f2a")
