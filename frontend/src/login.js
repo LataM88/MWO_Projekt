@@ -10,17 +10,19 @@ const Login = (props) => {
     const [password, setPassword] = useState("");
     const [emailError, setEmailError] = useState("");
     const [passwordError, setPasswordError] = useState("");
-    const [verificationCode, setVerificationCode] = useState(""); // Add state for the 2FA code
-    const [verificationCodeError, setVerificationCodeError] = useState(""); // Add error state for the code
-    const [isTwoFactorRequired, setIsTwoFactorRequired] = useState(false); // Track if 2FA is required
-    const [globalError, setGlobalError] = useState(""); // Global error state
+    const [verificationCode, setVerificationCode] = useState("");
+    const [verificationCodeError, setVerificationCodeError] = useState("");
+    const [isTwoFactorRequired, setIsTwoFactorRequired] = useState(false);
+    const [globalError, setGlobalError] = useState("");
+    const [rememberMe, setRememberMe] = useState(false);
+
     const navigate = useNavigate();
 
     const onButtonClick = () => {
         setEmailError("");
         setPasswordError("");
-        setVerificationCodeError(""); // Reset verification error
-        setGlobalError(""); // Reset global error
+        setVerificationCodeError("");
+        setGlobalError("");
 
         if (email === "") {
             setEmailError("Proszę wprowadź email");
@@ -56,15 +58,11 @@ const Login = (props) => {
     const checkAccountExists = (callback) => {
         fetch("http://localhost:3080/check-account", {
             method: "POST",
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })
         })
         .then(response => response.json())
-        .then(data => {
-            callback(data?.userExists);
-        })
+        .then(data => callback(data?.userExists))
         .catch(error => {
             console.error('Error checking account existence:', error);
             callback(false);
@@ -72,60 +70,41 @@ const Login = (props) => {
     };
 
     const logIn = () => {
-        console.log("Wysyłanie żądania logowania:", { email, password });
         fetch("http://localhost:3080/auth", {
             method: "POST",
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         })
-            .then(response => response.json())
-            .then(data => {
-                console.log("Odpowiedź serwera:", data); // Zaloguj odpowiedź serwera
-
-                if (data.message === 'success') {
-                    // Zapisujemy dane użytkownika w localStorage
-                    const userData = {
-                        email,
-                        userId: data.userId // Zapisujemy userId
-                    };
-
-                    console.log("Zapisanie danych do localStorage:", userData); // Zaloguj dane przed zapisaniem
-                    localStorage.setItem("user", JSON.stringify(userData));
-
-                    // Po pomyślnym zalogowaniu, jeśli wymagana jest weryfikacja 2FA:
-                    setIsTwoFactorRequired(true);
-
-                    // Ustawiamy komunikat o wysłaniu kodu 2FA
-                    setGlobalError("Kod 2FA został wysłany na Twój email.");
-                } else {
-                    // Zaktualizowanie globalError z komunikatem z serwera
-                    setGlobalError(data.message); // Przechwytywanie komunikatu błędu z odpowiedzi serwera
-                }
-            })
-            .catch(error => {
-                console.error('Błąd logowania:', error);
-                setGlobalError("Wystąpił błąd podczas logowania. Spróbuj ponownie.");
-            });
+        .then(response => response.json())
+        .then(data => {
+            if (data.message === 'success') {
+                const userData = { email, userId: data.userId };
+                localStorage.setItem("user", JSON.stringify(userData));
+                setIsTwoFactorRequired(true);
+                setGlobalError("Kod 2FA został wysłany na Twój email.");
+            } else {
+                setGlobalError(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Błąd logowania:', error);
+            setGlobalError("Wystąpił błąd podczas logowania. Spróbuj ponownie.");
+        });
     };
 
     const verifyTwoFactorCode = () => {
         setVerificationCodeError("");
-        setGlobalError(""); // Reset global error on verification step
+        setGlobalError("");
 
         if (verificationCode === "") {
             setVerificationCodeError("Proszę wprowadź kod weryfikacyjny");
             return;
         }
 
-        // Call the verify-2fa endpoint
         fetch("http://localhost:3080/verify-2fa", {
             method: "POST",
             credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 userId: JSON.parse(localStorage.getItem("user")).userId,
                 twoFactorCode: verificationCode,
@@ -136,14 +115,10 @@ const Login = (props) => {
         .then(data => {
             if (data.message === 'Weryfikacja pomyślna') {
                 const existingUser = JSON.parse(localStorage.getItem("user")) || {};
-                const updatedUser = {
-                    ...existingUser,
-                    token: data.token,
-                };
+                const updatedUser = { ...existingUser, token: data.token };
                 localStorage.setItem("user", JSON.stringify(updatedUser));
-
                 props.setLoggedIn(true);
-                navigate("/PostBoard"); // Redirect to homepage or desired page
+                navigate("/PostBoard");
             } else {
                 setVerificationCodeError("Nieprawidłowy kod weryfikacyjny.");
             }
@@ -154,17 +129,21 @@ const Login = (props) => {
         });
     };
 
-    const [rememberMe, setRememberMe] = useState(false);
+    const handleKeyDown = (event) => {
+        if (event.key === "Enter") {
+            if (isTwoFactorRequired) {
+                verifyTwoFactorCode();
+            } else {
+                onButtonClick();
+            }
+        }
+    };
 
     return (
-        <div className="mainContainerLogin">
+        <div className="mainContainerLogin" onKeyDown={handleKeyDown} tabIndex={0}>
             <div className="OptionContainerLogin">
-                <div className="titleContainerLogin">
-                    <div>Logowanie</div>
-                </div>
-                <div className="welcomeContainerLogin">
-                    <div>Cześć, <br />Witamy!</div>
-                </div>
+                <div className="titleContainerLogin">Logowanie</div>
+                <div className="welcomeContainerLogin">Cześć, <br />Witamy!</div>
                 <br />
                 <div className="inputContainerLogin">
                     <input
@@ -185,17 +164,16 @@ const Login = (props) => {
                         className="inputBoxLogin"
                     />
                     <label className="errorLabelLogin">{passwordError}</label>
-                    <br />
-                    <div className="inputContainerLogin">
-                        <label>
-                            <input
-                                type="checkbox"
-                                checked={rememberMe}
-                                onChange={() => setRememberMe(!rememberMe)}
-                            />
-                            Zapamiętaj mnie
-                        </label>
-                    </div>
+                </div>
+                <div className="inputContainerLogin">
+                    <label>
+                        <input
+                            type="checkbox"
+                            checked={rememberMe}
+                            onChange={() => setRememberMe(!rememberMe)}
+                        />
+                        Zapamiętaj mnie
+                    </label>
                 </div>
                 <br />
                 <div className="inputContainerLogin">
@@ -206,11 +184,7 @@ const Login = (props) => {
                         value="Zaloguj"
                     />
                 </div>
-
-                {/* Global error display */}
                 {globalError && <div className="globalError">{globalError}</div>}
-
-                {/* 2FA Step */}
                 {isTwoFactorRequired && (
                     <div>
                         <div className="inputContainerLogin">
@@ -234,9 +208,7 @@ const Login = (props) => {
                 )}
                 <br />
                 <div className="inputContainerLogin">
-                    <p>
-                        Nie posiadasz jeszcze konta? <Link to="/register">Zarejestruj się!</Link>
-                    </p>
+                    <p>Nie posiadasz jeszcze konta? <Link to="/register">Zarejestruj się!</Link></p>
                 </div>
                 <div className="inputContainerLogin">
                     <div className="forgotPasswordContainer">

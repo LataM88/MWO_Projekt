@@ -198,7 +198,7 @@ function Chat() {
                                                 <div className="message-sender">
                                                     <span className="sender-name">
                                                         {isSentByCurrentUser
-                                                            ? currentUser.imie + ' ' + currentUser.nazwisko
+                                                            ? 'Ty'
                                                             : sender?.imie + ' ' + sender?.nazwisko || 'Unknown sender'}
                                                     </span>
                                                 </div>

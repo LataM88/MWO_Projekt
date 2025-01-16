@@ -58,12 +58,13 @@ wss.on('connection', (ws) => {
 
     // Listen for incoming messages from client
     ws.on('message', (message) => {
+        const { senderId, receiverId, content } = JSON.parse(message);
         console.log('Received message:', message);
 
         // Broadcast the message to all clients except the sender
         wss.clients.forEach(client => {
-            if (client !== ws && client.readyState === client.OPEN) {
-                client.send(JSON.stringify({ senderId, receiverId, content }));
+            if (client.readyState === client.OPEN && client.userId === receiverId) {
+                client.send(JSON.stringify({ senderId, receiverId, content, timestamp: new Date().toISOString() }));
             }
         });
     });
