@@ -128,7 +128,8 @@ const Login = (props) => {
             },
             body: JSON.stringify({
                 userId: JSON.parse(localStorage.getItem("user")).userId,
-                twoFactorCode: verificationCode
+                twoFactorCode: verificationCode,
+                rememberMe: rememberMe,
             })
         })
         .then(response => response.json())

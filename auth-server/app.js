@@ -87,6 +87,11 @@ const createAccessToken = (userId, email) => {
     return jwt.sign(payload, jwtSecretKey, { expiresIn: '10m' }); // Ważność: 15 minut
 };
 
+const createRefreshTokenLong = (userId, email) => {
+    const payload = { userId, email };
+    console.log('tworzenie refreshtokena długiego')
+    return jwt.sign(payload, refreshTokenSecretKey, { expiresIn: '7d' }); // Ważność: 7 dni
+};
 const createRefreshToken = (userId, email) => {
     const payload = { userId, email };
     console.log('tworzenie refreshtokena')
@@ -255,7 +260,7 @@ app.post('/auth', async (req, res) => {
 
 // Endpoint do weryfikacji kodu 2FA
 app.post('/verify-2fa', async (req, res) => {
-    const { userId, twoFactorCode } = req.body;
+    const { userId, twoFactorCode, rememberMe } = req.body;
 
     try {
         // Pobranie użytkownika z bazy danych
@@ -287,7 +292,25 @@ app.post('/verify-2fa', async (req, res) => {
 
         // Generowanie tokenów
         const accessToken = createAccessToken(userId, user.email);
-        const refreshToken = createRefreshToken(userId, user.email);
+
+        let refreshToken;
+        if (rememberMe) {
+            refreshToken = createRefreshTokenLong(userId, user.email);
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: true, // Dla lokalnego środowiska (HTTP)
+                sameSite: 'None', // Albo 'Lax' w zależności od potrzeb
+                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dni
+            });
+        } else {
+            refreshToken = createRefreshToken(userId, user.email);
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: true, // Dla lokalnego środowiska (HTTP)
+                sameSite: 'None', // Albo 'Lax' w zależności od potrzeb
+                maxAge: 60 * 60 * 1000, // 1 godzina
+            });
+        }
 
         // Ustawienie tokenów w ciasteczkach
         res.cookie('accessToken', accessToken, {
@@ -297,12 +320,6 @@ app.post('/verify-2fa', async (req, res) => {
             maxAge: 15 * 60 * 1000, // 15 minut
         });
 
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: true, // Dla lokalnego środowiska (HTTP)
-            sameSite: 'None', // Albo 'Lax' w zależności od potrzeb
-            maxAge: 60 * 60 * 1000, // 1 godzina
-        });
         console.log("log przed wysłaniem odpowiedzi z verify-f2a")
         // Zwrócenie odpowiedzi z powodzeniem
         res.status(200).json({ message: 'Weryfikacja pomyślna' });
