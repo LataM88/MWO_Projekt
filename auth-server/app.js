@@ -65,7 +65,7 @@ const verifyAccessToken = (req, res, next) => {
                     const newAccessToken = jwt.sign(
                         { userId: refreshDecoded.userId },
                         jwtSecretKey,
-                        { expiresIn: '20m' } // Nowy accessToken ważny przez 20 minut
+                        { expiresIn: '20m' }
                     );
 
 
@@ -73,7 +73,7 @@ const verifyAccessToken = (req, res, next) => {
                         httpOnly: true,
                         secure: true,
                         sameSite: 'None',
-                        maxAge: 20 * 60 * 1000, // 20 minut
+                        maxAge: 20 * 60 * 1000,
                     });
 
 
@@ -96,12 +96,12 @@ const verifyAccessToken = (req, res, next) => {
 wss.on('connection', (ws) => {
     console.log('Client connected');
 
-    // Listen for incoming messages from client
+
     ws.on('message', (message) => {
         const { senderId, receiverId, content } = JSON.parse(message);
         console.log('Received message:', message);
 
-        // Broadcast the message to all clients except the sender
+
         wss.clients.forEach(client => {
             if (client.readyState === client.OPEN && client.userId === receiverId) {
                 client.send(JSON.stringify({ senderId, receiverId, content, timestamp: new Date().toISOString() }));
@@ -109,7 +109,7 @@ wss.on('connection', (ws) => {
         });
     });
 
-    // Handle client disconnection
+
     ws.on('close', () => {
         console.log('Client disconnected');
     });
@@ -281,7 +281,7 @@ app.post('/auth', async (req, res) => {
         return res.status(401).json({ message: 'Nieprawidłowe hasło.' });
     }
     // Sprawdzenie czasu ostatniej wysyłki kodu
-    const currentTime = new Date(); // Czas lokalny serwera
+    const currentTime = new Date();
     const lastSent = user.lastTwoFactorSent ? new Date(user.lastTwoFactorSent) : null;
 
     const currentTimeInSeconds = Math.floor(currentTime.getTime() / 1000);
