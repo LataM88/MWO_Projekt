@@ -10,112 +10,96 @@ function Chat() {
     const [users, setUsers] = useState([]);
     const [filteredUsers, setFilteredUsers] = useState([]);
     const [activeUser, setActiveUser] = useState(null);
-    const currentUser = JSON.parse(localStorage.getItem('user')); // Pobieranie zalogowanego użytkownika
-
+    const [userOnlineStatus, setUserOnlineStatus] = useState({});
+    const currentUser = JSON.parse(localStorage.getItem('user'));
     const ws = useRef(null);
+    const messagesEndRef = useRef(null);
 
-    const getMessagesFromStorage = () => {
-        try {
-            const savedMessages = JSON.parse(localStorage.getItem('messages'));
-            return Array.isArray(savedMessages) ? savedMessages : [];
-        } catch (error) {
-            console.error('Error parsing messages from localStorage:', error);
-            return [];
-        }
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
     useEffect(() => {
-        const fetchUsers = async () => {
+        const fetchUsersAndStatus = async () => {
             try {
-                const response = await fetch('http://localhost:3080/api/users');
+                const response = await fetch("http://localhost:3080/api/users",{
+                    credentials: 'include',
+                });
                 if (response.ok) {
                     const data = await response.json();
-                    const filteredUsers = data.filter(
-                        (user) => user.email !== currentUser.email
-                    );
-                    setUsers(filteredUsers);
-                    setFilteredUsers(filteredUsers); // Initially set all users
-                } else {
-                    console.error('Failed to fetch users:', response.statusText);
+                    const filteredData = data.filter(user => user.id !== currentUser.userId);
+                    setUsers(filteredData);
+                    setFilteredUsers(filteredData);
+
+                    const status = {};
+                    for (let user of filteredData) {
+                        const statusResponse = await fetch(`http://localhost:3080/api/isonline/${user.id}`);
+                        if (statusResponse.ok) {
+                            const onlineData = await statusResponse.json();
+                            status[user.id] = onlineData.isOnline;
+                        }
+                    }
+                    setUserOnlineStatus(status);
                 }
             } catch (error) {
-                console.error('Error fetching users:', error);
+                console.error("Error fetching users or status:", error);
             }
         };
 
-        fetchUsers();
-    }, [currentUser.email]);
+        fetchUsersAndStatus();
+        const interval = setInterval(fetchUsersAndStatus, 10000);
+        return () => clearInterval(interval);
+    }, [currentUser.userId]);
 
-useEffect(() => {
-    if (activeUser) {
-        const fetchMessages = async () => {
-            try {
-                const response = await fetch(`http://localhost:3080/messages/${currentUser.userId}/${activeUser.id}`);
-                const data = await response.json();
-                if (data && Array.isArray(data.messages)) {
-                    const allMessages = getMessagesFromStorage();
-                    const updatedMessages = [...allMessages, ...data.messages];
-                    localStorage.setItem('messages', JSON.stringify(updatedMessages));
-                    setMessages(updatedMessages.filter(msg =>
-                        (msg.senderId === currentUser.userId && msg.receiverId === activeUser.id) ||
-                        (msg.senderId === activeUser.id && msg.receiverId === currentUser.userId)
-                    ));
-                } else {
-                    setMessages([]);
+    useEffect(() => {
+        if (activeUser) {
+            const fetchMessages = async () => {
+                try {
+                    const response = await fetch(`http://localhost:3080/messages/${currentUser.userId}/${activeUser.id}`, {
+                        credentials: 'include',
+                    });
+                    const data = await response.json();
+                    if (data && Array.isArray(data.messages)) {
+                        const transformedMessages = data.messages.map(msg => ({
+                            ...msg,
+                            senderId: msg.sender_id,
+                            receiverId: msg.receiver_id,
+                            timestamp: msg.timestamp,
+                        }));
+                        setMessages(transformedMessages);
+                    } else {
+                        setMessages([]);
+                    }
+                } catch (error) {
+                    console.error('Error fetching messages:', error);
                 }
-            } catch (error) {
-                console.error('Error fetching messages:', error);
+            };
+            fetchMessages();
+        }
+    }, [activeUser, currentUser.userId]);
+
+    useEffect(() => {
+        ws.current = new WebSocket('ws://localhost:3080');
+
+        ws.current.onopen = () => {
+            console.log('WebSocket connected');
+        };
+
+        ws.current.onmessage = (event) => {
+            const newMessage = JSON.parse(event.data);
+            setMessages((prevMessages) => [...prevMessages, newMessage]);
+        };
+
+        return () => {
+            if (ws.current) {
+                ws.current.close();
             }
         };
-        fetchMessages();
-        const savedMessages = getMessagesFromStorage();
-        const userMessages = savedMessages.filter(msg =>
-            (msg.senderId === currentUser.userId && msg.receiverId === activeUser.id) ||
-            (msg.senderId === activeUser.id && msg.receiverId === currentUser.userId)
-        );
-        setMessages(userMessages);
-    }
-}, [activeUser, currentUser.userId]);
+    }, []);
 
-useEffect(() => {
-    ws.current = new WebSocket('ws://localhost:3080');
-
-    ws.current.onopen = () => {
-        console.log('WebSocket connected');
-    };
-
-    ws.current.onmessage = (event) => {
-        const newMessage = JSON.parse(event.data);
-        if (!newMessage.timestamp) {
-            newMessage.timestamp = new Date().toISOString();
-        }
-
-        setMessages((prevMessages) => {
-            const exists = prevMessages.some(
-                (msg) => msg.senderId === newMessage.senderId && msg.timestamp === newMessage.timestamp
-            );
-            if (!exists) {
-                const updatedMessages = [...prevMessages, newMessage];
-                localStorage.setItem('messages', JSON.stringify(updatedMessages));
-                return updatedMessages;
-            } else {
-                return prevMessages;
-            }
-        });
-    };
-
-    return () => {
-        if (ws.current) {
-            ws.current.close();
-        }
-    };
-}, []);
-
-    const formatTime = (timestamp) => {
-        const date = new Date(timestamp);
-        if (isNaN(date.getTime())) return '';
-        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-    };
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
 
     const handleSendMessage = async () => {
         if (message && activeUser) {
@@ -133,13 +117,13 @@ useEffect(() => {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(newMessage),
+                    credentials: 'include',
                 });
 
                 if (response.ok) {
-                    const updatedMessages = [...messages, newMessage];
-                    localStorage.setItem('messages', JSON.stringify(updatedMessages));
-                    setMessages(updatedMessages);
+                    ws.current.send(JSON.stringify(newMessage));
                     setMessage('');
+                    scrollToBottom();
                 } else {
                     console.error('Failed to send message:', response.statusText);
                 }
@@ -160,6 +144,9 @@ useEffect(() => {
         setFilteredUsers(users.filter(user => user.email.toLowerCase().includes(query)));
     };
 
+
+    const isUsersLoaded = users.length > 0;
+
     return (
         <div className="chat-container">
             <div className="user-list">
@@ -171,16 +158,21 @@ useEffect(() => {
                     />
                 </div>
                 <div className="users">
-                    {(filteredUsers.length > 0 ? filteredUsers : users).map(user => (
+                    {filteredUsers.map(user => (
                         <div
                             key={user.id}
                             className="user"
                             onClick={() => setActiveUser(user)}
                         >
+                            <div className="status-dot">
+                                <span className={`dot ${userOnlineStatus[user.id] ? 'online-dot' : 'offline-dot'}`}></span>
+                            </div>
                             <img src={user.image} alt={user.email} className="user-image" />
                             <div className="user-info">
                                 <span>{user.imie + ' ' + user.nazwisko}</span>
-                                <span className={`status ${user.status}`}>{user.status === 'online' ? 'Dostępny' : 'Niedostępny'}</span>
+                                <span className={`status ${userOnlineStatus[user.id] ? 'online' : 'offline'}`}>
+                                    {userOnlineStatus[user.id] ? 'Dostępny' : 'Niedostępny'}
+                                </span>
                             </div>
                         </div>
                     ))}
@@ -195,24 +187,36 @@ useEffect(() => {
                             <h2>
                                 Czatujesz z {activeUser.imie + ' ' + activeUser.nazwisko} ({activeUser.email})
                             </h2>
-                            <span className="status">{activeUser.status === 'online' ? 'Dostępny' : 'Niedostępny'}</span>
+                            <span className="status">{userOnlineStatus[activeUser.id] ? 'Dostępny' : 'Niedostępny'}</span>
                         </div>
 
                         <div className="messages">
-                            {messages.map((msg, index) => {
-                                const sender = users.find(user => user.id === msg.senderId);
-                                return (
-                                    <div key={index} className={`message ${msg.senderId === currentUser.userId ? 'sent' : 'received'}`}>
-                                        {sender && (
-                                            <div className="message-sender">
-                                                <span className="sender-name">{sender.imie} {sender.nazwisko}</span>
-                                            </div>
-                                        )}
-                                        <div className="message-text">{msg.content}</div>
-                                        <div className="message-time">{formatTime(msg.timestamp)}</div>
-                                    </div>
-                                );
-                            })}
+                            {isUsersLoaded ? (
+                                messages.map((msg, index) => {
+                                    const sender = users.find(user => user.id === msg.senderId);
+
+                                    const isSentByCurrentUser = msg.senderId === currentUser.userId;
+
+                                    return (
+                                        <div key={index} className={`message ${isSentByCurrentUser ? 'sent' : 'received'}`}>
+                                            {isSentByCurrentUser || sender ? (
+                                                <div className="message-sender">
+                                                    <span className="sender-name">
+                                                        {isSentByCurrentUser
+                                                            ? 'Ty'
+                                                            : sender?.imie + ' ' + sender?.nazwisko || 'Unknown sender'}
+                                                    </span>
+                                                </div>
+                                            ) : null}
+                                            <div className="message-text">{msg.content}</div>
+                                            <div className="message-time">{new Date(msg.timestamp).toLocaleTimeString()}</div>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <p>Loading users...</p>
+                            )}
+                            <div ref={messagesEndRef}></div> {/* Element for scrolling */}
                         </div>
 
                         <div className="input-area">
@@ -220,7 +224,7 @@ useEffect(() => {
                                 type="text"
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
-                                onKeyPress={handleKeyPress} // Obsługa klawisza Enter
+                                onKeyPress={handleKeyPress}
                                 placeholder="Wpisz swoją wiadomość"
                             />
                             <button onClick={handleSendMessage}>Wyślij</button>
@@ -237,3 +241,4 @@ useEffect(() => {
 }
 
 export default Chat;
+

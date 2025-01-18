@@ -7,8 +7,8 @@ import './css/fontello.css'
 const Register = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [imie, setImie] = useState(""); // Nowy stan dla imienia
-    const [nazwisko, setNazwisko] = useState(""); // Nowy stan dla nazwiska
+    const [imie, setImie] = useState("");
+    const [nazwisko, setNazwisko] = useState("");
     const [emailError, setEmailError] = useState("");
     const [passwordError, setPasswordError] = useState("");
     const [successMessage, setSuccessMessageRegister] = useState("");
@@ -22,7 +22,6 @@ const Register = () => {
         setSuccessMessageRegister("");
         setErrorMessageRegister("");
 
-        // Walidacja danych wejściowych
         if (!imie.trim()) {
             setErrorMessageRegister("Proszę wprowadzić swoje imię");
             return;
@@ -53,7 +52,6 @@ const Register = () => {
             return;
         }
 
-        // Wywołanie API rejestracji
         fetch("http://localhost:3080/register", {
             method: "POST",
             headers: {
@@ -77,8 +75,18 @@ const Register = () => {
         });
     };
 
+    const handleKeyDown = (event) => {
+        if (event.key === "Enter") {
+            onButtonClick();
+        }
+    };
+
     return (
-        <div className="mainContainerRegister">
+        <div
+            className="mainContainerRegister"
+            tabIndex={0}
+            onKeyDown={handleKeyDown}
+        >
             <div className={"OptionContainerRegister"}>
                 <div className="titleContainerRegister">
                     <div>Rejestracja</div>
@@ -138,7 +146,7 @@ const Register = () => {
                     <div className="successMessageRegister">
                         {successMessage}
                         <div>
-                        <Link to = "/login">Przejdź do logowania</Link>
+                            <Link to="/login">Przejdź do logowania</Link>
                         </div>
                     </div>
                 )}

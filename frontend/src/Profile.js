@@ -13,6 +13,7 @@ function Profile() {
     const [posts, setPosts] = useState([]);
     const [activeTab, setActiveTab] = useState('opis');
     const navigate = useNavigate();
+    const [userOnlineStatus, setUserOnlineStatus] = useState({});
 
     const loggedInUser = JSON.parse(localStorage.getItem('user'));
     const loggedInUserId = loggedInUser ? loggedInUser.userId : null;
@@ -27,10 +28,34 @@ function Profile() {
         return linkifiedText.replace(/\n/g, '<br />');
     };
 
+
+    useEffect(() => {
+        const fetchUserOnlineStatus = async () => {
+            try {
+                const response = await fetch(`http://localhost:3080/api/isonline/${userId}`, {
+                    credentials: 'include',
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setUserOnlineStatus({ [userId]: data.isOnline });
+                } else {
+                    console.error('Błąd podczas pobierania statusu online.');
+                }
+            } catch (error) {
+                console.error('Błąd podczas pobierania statusu online:', error);
+            }
+        };
+
+        fetchUserOnlineStatus();
+    }, [userId]);
+
     useEffect(() => {
         const fetchUserPosts = async () => {
             try {
-                const response = await fetch(`http://localhost:3080/api/posts/${userId}`);
+                const response = await fetch(`http://localhost:3080/api/posts/${userId}`,{
+                    credentials: 'include',
+                });
                 if (response.ok) {
                     const postsData = await response.json();
                     setPosts(postsData);
@@ -55,7 +80,9 @@ function Profile() {
             setIsOwnProfile(false);
         }
 
-        fetch(`http://localhost:3080/user/${userId}`)
+        fetch(`http://localhost:3080/user/${userId}`,{
+            credentials: 'include',
+        })
             .then((res) => res.json())
             .then((data) => {
                 setUser(data);
@@ -82,10 +109,12 @@ function Profile() {
     const saveOpis = () => {
         fetch(`http://localhost:3080/user/${userId}`, {
             method: 'PUT',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ opis: editedOpis }),
+
         })
             .then((res) => {
                 if (res.ok) {
@@ -111,6 +140,7 @@ function Profile() {
             const response = await fetch(`http://localhost:3080/upload-profile-image/${userId}`, {
                 method: 'POST',
                 body: formData,
+                credentials: 'include',
             });
 
             if (response.ok) {
@@ -140,8 +170,8 @@ function Profile() {
                     className="profile-image"
                 />
                 <div className="profile-actions">
-                    <span className={`status ${user.isActive ? '' : 'inactive'}`}>
-                        {user.isActive ? 'Aktywny' : 'Nie aktywny'}
+                    <span className={`status ${userOnlineStatus[user.id] ? 'online' : 'offline'}`}>
+                        {userOnlineStatus[user.id] ? 'Dostępny' : 'Niedostępny'}
                     </span>
                     <button className="inputButtonProfile" onClick={(e) => handleChatClick(user.id, e)}>Wyślij wiadomość</button>
                 </div>
@@ -267,4 +297,5 @@ function Profile() {
 }
 
 export default Profile;
+
 
