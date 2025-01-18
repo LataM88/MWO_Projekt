@@ -13,7 +13,7 @@ function Chat() {
     const [userOnlineStatus, setUserOnlineStatus] = useState({});
     const currentUser = JSON.parse(localStorage.getItem('user'));
     const ws = useRef(null);
-    const messagesEndRef = useRef(null); // Ref to the end of the messages
+    const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -121,7 +121,7 @@ function Chat() {
                 });
 
                 if (response.ok) {
-                    ws.current.send(JSON.stringify(newMessage)); // Send via WebSocket
+                    ws.current.send(JSON.stringify(newMessage));
                     setMessage('');
                     scrollToBottom();
                 } else {
@@ -144,7 +144,7 @@ function Chat() {
         setFilteredUsers(users.filter(user => user.email.toLowerCase().includes(query)));
     };
 
-    // Make sure users are loaded before rendering the chat messages
+
     const isUsersLoaded = users.length > 0;
 
     return (
@@ -194,7 +194,7 @@ function Chat() {
                             {isUsersLoaded ? (
                                 messages.map((msg, index) => {
                                     const sender = users.find(user => user.id === msg.senderId);
-                                    // If sender is not found and the message was sent by the current user
+
                                     const isSentByCurrentUser = msg.senderId === currentUser.userId;
 
                                     return (

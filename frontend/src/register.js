@@ -7,8 +7,8 @@ import './css/fontello.css'
 const Register = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [imie, setImie] = useState(""); // Nowy stan dla imienia
-    const [nazwisko, setNazwisko] = useState(""); // Nowy stan dla nazwiska
+    const [imie, setImie] = useState("");
+    const [nazwisko, setNazwisko] = useState("");
     const [emailError, setEmailError] = useState("");
     const [passwordError, setPasswordError] = useState("");
     const [successMessage, setSuccessMessageRegister] = useState("");
@@ -22,7 +22,6 @@ const Register = () => {
         setSuccessMessageRegister("");
         setErrorMessageRegister("");
 
-        // Walidacja danych wejściowych
         if (!imie.trim()) {
             setErrorMessageRegister("Proszę wprowadzić swoje imię");
             return;
@@ -53,7 +52,6 @@ const Register = () => {
             return;
         }
 
-        // Wywołanie API rejestracji
         fetch("http://localhost:3080/register", {
             method: "POST",
             headers: {
@@ -77,7 +75,6 @@ const Register = () => {
         });
     };
 
-    // Funkcja obsługująca klawisz Enter
     const handleKeyDown = (event) => {
         if (event.key === "Enter") {
             onButtonClick();
@@ -87,8 +84,8 @@ const Register = () => {
     return (
         <div
             className="mainContainerRegister"
-            tabIndex={0} // Dodanie focusowalności
-            onKeyDown={handleKeyDown} // Obsługa klawiatury
+            tabIndex={0}
+            onKeyDown={handleKeyDown}
         >
             <div className={"OptionContainerRegister"}>
                 <div className="titleContainerRegister">
